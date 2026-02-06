@@ -752,8 +752,10 @@
 
     let qty = 1;
     let cartQty = 0;
+
     let modalOrderId = null;
     let modalReceiptUrl = null;
+
     let prevPageBeforeTracker = "page-landing";
 
     const $ = (id) => document.getElementById(id);
@@ -813,6 +815,7 @@
         "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
       }[s]));
     }
+
     function fmtDate(iso){
       try{ return new Date(iso).toLocaleString(); }catch{ return iso; }
     }
@@ -884,7 +887,7 @@
       const file = $("receipt").files && $("receipt").files[0];
 
       if(!name) return showNotice("notice", "bad", "Please enter your full name.");
-      if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showNotice("notice", "bad", "Please enter a valid email.");
+      if(!email || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) return showNotice("notice", "bad", "Please enter a valid email.");
       if(!ref) return showNotice("notice", "bad", "Please enter your GCash reference number.");
       if(!file) return showNotice("notice", "bad", "Please upload your receipt.");
 
@@ -999,10 +1002,49 @@
 
     // ADMIN API
     async function adminFetchOrders(){
-      const r = await fetch("/api/admin/orders", { headers: { "x-admin-auth": ADMIN.password }, cache:"no-store" });
+      const r = await fetch("/api/admin/orders", {
+        headers: { "x-admin-auth": ADMIN.password },
+        cache:"no-store"
+      });
       const j = await r.json().catch(()=> ({}));
       if(!r.ok || !j.ok) throw new Error(j.error || "Failed to fetch orders");
       return j.orders || [];
+    }
+
+    async function adminFetchOne(orderId){
+      // ✅ THIS is the important fix: /api/admin/order (NOT /admin/order)
+      const r = await fetch(`/api/admin/order?order_id=${encodeURIComponent(orderId)}&t=${Date.now()}`, {
+        headers: { "x-admin-auth": ADMIN.password },
+        cache:"no-store"
+      });
+      const j = await r.json().catch(()=> ({}));
+      if(!r.ok || !j.ok) throw new Error(j.error || "Not found");
+      return j; // { ok:true, order, receipt_url }
+    }
+
+    async function adminSetStatus(newStatus){
+      if(!modalOrderId) return;
+
+      try{
+        modalNotice("ok", "Updating status…");
+
+        const r = await fetch("/api/admin/status", {
+          method:"POST",
+          headers:{
+            "Content-Type":"application/json",
+            "x-admin-auth": ADMIN.password
+          },
+          body: JSON.stringify({ order_id: modalOrderId, status: newStatus })
+        });
+        const j = await r.json().catch(()=> ({}));
+        if(!r.ok || !j.ok) throw new Error(j.error || "Status update failed");
+
+        modalNotice("ok", `Status updated to <b>${escapeHtml(newStatus)}</b>.`);
+        await renderAdminTable();
+
+      }catch(e){
+        modalNotice("bad", escapeHtml(e.message || "Status update failed"));
+      }
     }
 
     async function renderAdminTable(){
@@ -1035,7 +1077,6 @@
       for(const o of orders){
         const status = o.status || STATUS.PENDING;
         const tagClass = statusTagClass(status);
-
         const receiptLabel = (o.receipt_path || "").toLowerCase().includes(".pdf") ? "PDF" : "Image";
 
         const tr = document.createElement("tr");
@@ -1054,7 +1095,11 @@
       }
 
       tbody.querySelectorAll("[data-view]").forEach(btn => {
-        btn.addEventListener("click", () => openModal(btn.getAttribute("data-view")));
+        btn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          openModal(btn.getAttribute("data-view"));
+        });
       });
     }
 
@@ -1094,82 +1139,56 @@
     modalBack.addEventListener("click", (e) => { if(e.target === modalBack) closeModal(); });
 
     async function openModal(orderId){
-  modalOrderId = orderId;
+      modalOrderId = orderId;
+      modalReceiptUrl = null;
 
-  // open modal immediately (show loading)
-  $("modalSub").textContent = "Loading…";
-  $("mOrderId").textContent = orderId;
-  $("mName").textContent = "—";
-  $("mEmail").textContent = "—";
-  $("mRef").textContent = "—";
-  $("mQty").textContent = "—";
-  $("mTotal").textContent = "—";
-  $("mFile").textContent = "—";
-  $("mPreview").innerHTML = "Loading preview…";
-  $("mNotice").style.display = "none";
-  modalBack.classList.add("open");
+      $("modalSub").textContent = "Loading…";
+      $("mOrderId").textContent = orderId;
+      $("mName").textContent = "—";
+      $("mEmail").textContent = "—";
+      $("mRef").textContent = "—";
+      $("mQty").textContent = "—";
+      $("mTotal").textContent = "—";
+      $("mFile").textContent = "—";
+      $("mPreview").innerHTML = "Loading preview…";
+      $("mNotice").style.display = "none";
 
-  try{
-    const r = await fetch(`/api/admin/orders?order_id=${encodeURIComponent(orderId)}&t=${Date.now()}`, {
-      headers: { "x-admin-auth": ADMIN.password },
-      cache: "no-store"
-    });
-    const j = await r.json().catch(() => ({}));
+      modalBack.classList.add("open");
 
-    if(!r.ok || !j.ok){
-      throw new Error(j.error || "Not found");
+      try{
+        const j = await adminFetchOne(orderId);
+        const o = j.order || {};
+        modalReceiptUrl = j.receipt_url || null;
+
+        $("modalSub").textContent = fmtDate(o.created_at || "");
+        $("mOrderId").textContent = o.order_id || orderId;
+        $("mName").textContent = o.name || "—";
+        $("mEmail").textContent = o.email || "—";
+        $("mRef").textContent = o.gcash_ref || o.ref || o.reference_no || "—";
+        $("mQty").textContent = (o.qty ?? "—");
+        $("mTotal").textContent = (o.total ?? "—");
+        $("mFile").textContent = o.receipt_path || "—";
+
+        const preview = $("mPreview");
+        preview.innerHTML = "";
+        if(!modalReceiptUrl){
+          preview.textContent = "No receipt URL available.";
+        }else if(String(o.receipt_path || "").toLowerCase().includes(".pdf")){
+          const iframe = document.createElement("iframe");
+          iframe.src = modalReceiptUrl;
+          preview.appendChild(iframe);
+        }else{
+          const img = document.createElement("img");
+          img.src = modalReceiptUrl;
+          img.alt = "Receipt";
+          preview.appendChild(img);
+        }
+
+      }catch(err){
+        modalNotice("bad", escapeHtml(err.message || "Not found"));
+        $("mPreview").textContent = "No preview.";
+      }
     }
-
-    const o = j.order || {};
-    const receiptUrl = j.receipt_url || null;
-
-    const createdISO = o.created_at || o.createdAtISO || o.created_at_iso || new Date().toISOString();
-    $("modalSub").textContent = fmtDate(createdISO);
-
-    $("mOrderId").textContent = o.order_id || orderId;
-    $("mName").textContent = o.name || o.customer_name || "—";
-    $("mEmail").textContent = o.email || "—";
-    $("mRef").textContent = o.gcash_ref || o.reference_no || o.ref || "—";
-    $("mQty").textContent = (o.qty ?? o.quantity ?? "—");
-    $("mTotal").textContent = (o.total ?? "—");
-    $("mFile").textContent = o.receipt_path || "—";
-
-    // preview receipt
-    const preview = $("mPreview");
-    preview.innerHTML = "";
-    if(!receiptUrl){
-      preview.textContent = "No receipt URL available.";
-    }else if(String(o.receipt_path || "").toLowerCase().includes(".pdf")){
-      const iframe = document.createElement("iframe");
-      iframe.src = receiptUrl;
-      preview.appendChild(iframe);
-    }else{
-      const img = document.createElement("img");
-      img.src = receiptUrl;
-      img.alt = "Receipt";
-      preview.appendChild(img);
-    }
-
-    // Buttons
-    $("mOpenNewTab").onclick = () => {
-      if(!receiptUrl) return modalNotice("bad", "No receipt to open.");
-      window.open(receiptUrl, "_blank");
-    };
-
-    // For now: status buttons show message only (needs API endpoint to update status)
-    $("mPending").onclick = () => modalNotice("bad", "Status update not wired yet (needs /api/admin/status).");
-    $("mProcessing").onclick = () => modalNotice("bad", "Status update not wired yet (needs /api/admin/status).");
-    $("mVerifiedSent").onclick = () => modalNotice("bad", "Status update not wired yet (needs /api/admin/status).");
-    $("mReject").onclick = () => modalNotice("bad", "Status update not wired yet (needs /api/admin/status).");
-
-    // Delete (needs API endpoint)
-    $("mDelete").onclick = () => modalNotice("bad", "Delete not wired yet (needs /api/admin/delete).");
-
-  }catch(err){
-    modalNotice("bad", escapeHtml(err.message || "Not found"));
-    $("mPreview").textContent = "No preview.";
-  }
-}
 
     $("mPending").onclick = () => adminSetStatus(STATUS.PENDING);
     $("mProcessing").onclick = () => adminSetStatus(STATUS.PROCESSING);
@@ -1187,7 +1206,7 @@
       try{
         const r = await fetch("/api/admin/delete", {
           method:"POST",
-          headers: {
+          headers:{
             "Content-Type":"application/json",
             "x-admin-auth": ADMIN.password
           },
