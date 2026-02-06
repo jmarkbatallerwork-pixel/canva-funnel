@@ -1,0 +1,1209 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cando Pro — Funnel (₱39) + Admin + Order Status</title>
+  <style>
+    :root{
+      --bg:#fff7fb;
+      --card:#ffffff;
+      --text:#1f2330;
+      --muted:#6b7280;
+      --line:#f2d7e6;
+      --pink:#ff4fa3;
+      --pink2:#ff7cc2;
+      --soft:#fff0f7;
+      --shadow: 0 18px 45px rgba(31,35,48,.10);
+      --r:18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      color:var(--text);
+      background:
+        radial-gradient(900px 500px at 10% 0%, rgba(255,79,163,.12), transparent 60%),
+        radial-gradient(900px 500px at 90% 20%, rgba(255,124,194,.10), transparent 60%),
+        var(--bg);
+    }
+    a{color:var(--pink); text-decoration:none}
+    a:hover{text-decoration:underline}
+
+    .wrap{max-width:1060px; margin:0 auto; padding:18px 16px 90px}
+    .top{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      position:sticky; top:0; z-index:10;
+      padding:14px 0;
+      background: linear-gradient(to bottom, rgba(255,247,251,.92), rgba(255,247,251,.72));
+      backdrop-filter: blur(10px);
+    }
+    .brand{display:flex; gap:12px; align-items:center}
+    .logo{
+      width:42px; height:42px; border-radius:14px;
+      background: linear-gradient(135deg, var(--pink), var(--pink2));
+      box-shadow: 0 10px 22px rgba(255,79,163,.22);
+      position:relative;
+      flex:0 0 auto;
+    }
+    .logo:after{
+      content:"";
+      position:absolute; inset:10px;
+      border-radius:10px;
+      border:2px solid rgba(255,255,255,.65);
+      transform: rotate(7deg);
+    }
+    .brand h1{margin:0; font-size:18px; letter-spacing:-.2px}
+    .brand p{margin:2px 0 0; color:var(--muted); font-size:13px}
+
+    .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+    .badge{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:8px 12px;
+      border-radius:999px;
+      background: var(--soft);
+      border:1px solid var(--line);
+      color:#aa2b66;
+      font-size:13px;
+      font-weight:950;
+      white-space:nowrap;
+    }
+    .badge small{font-weight:900; color:#8c1f4b}
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius: var(--r);
+      padding:18px;
+      box-shadow: var(--shadow);
+    }
+    .muted{color:var(--muted); font-size:13px; line-height:1.55}
+    .line{height:1px; background:var(--line); margin:14px 0}
+    .grid{display:grid; grid-template-columns: 1.15fr .85fr; gap:14px}
+    .grid2{display:grid; grid-template-columns: 1fr 1fr; gap:14px}
+    @media(max-width: 920px){ .grid,.grid2{grid-template-columns:1fr} }
+
+    .btn{
+      border:1px solid var(--line);
+      background:#fff;
+      color:var(--text);
+      padding:11px 14px;
+      border-radius: 13px;
+      cursor:pointer;
+      font-weight:1000;
+      transition: transform .05s ease, box-shadow .2s ease, border-color .2s ease;
+      box-shadow: 0 8px 18px rgba(31,35,48,.06);
+    }
+    .btn:hover{border-color:#f0b9d3}
+    .btn:active{transform: translateY(1px)}
+    .btn.primary{
+      background: linear-gradient(135deg, rgba(255,79,163,.16), rgba(255,124,194,.14));
+      border-color: rgba(255,79,163,.30);
+      color:#8c1f4b;
+    }
+    .btn.primary:hover{border-color: rgba(255,79,163,.42)}
+    .btn.danger{
+      border-color: rgba(239,68,68,.25);
+      background: rgba(239,68,68,.08);
+      color:#7a1b1b;
+    }
+    .btn:disabled{opacity:.55; cursor:not-allowed; box-shadow:none}
+
+    .heroTitle{margin:0 0 8px; font-size:30px; letter-spacing:-.6px}
+    .heroSub{margin:0; color:var(--muted); font-size:14px}
+
+    .priceBox{
+      border:1px solid rgba(255,79,163,.22);
+      background: linear-gradient(135deg, rgba(255,79,163,.10), rgba(255,124,194,.08));
+      border-radius: 16px;
+      padding:14px;
+    }
+    .price{font-size:34px; font-weight:1100; letter-spacing:-.7px; color:#8c1f4b}
+    .strike{color:#9ca3af; text-decoration:line-through; font-weight:950}
+    .pill{
+      display:inline-flex; align-items:center;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background: var(--soft);
+      color:#8c1f4b;
+      font-weight:1100;
+      font-size:12px;
+    }
+
+    .bullets{margin:10px 0 0; padding:0; list-style:none}
+    .bullets li{
+      display:flex; gap:10px; align-items:flex-start;
+      padding:8px 0;
+      border-bottom:1px dashed rgba(242,215,230,.9);
+    }
+    .bullets li:last-child{border-bottom:0}
+    .check{
+      width:22px; height:22px; border-radius:8px;
+      border:1px solid var(--line);
+      background: var(--soft);
+      display:flex; align-items:center; justify-content:center;
+      color:#8c1f4b; font-weight:1100; flex:0 0 auto;
+    }
+
+    .sectionTitle{margin:0 0 10px; font-size:16px}
+
+    .quote{
+      border:1px solid var(--line);
+      background:#fff;
+      border-radius: 14px;
+      padding:12px;
+      margin:10px 0;
+    }
+    .stars{color:#ff4fa3; font-weight:1100; letter-spacing:1px; font-size:12px}
+    .quote .who{margin-top:6px; color:var(--muted); font-size:13px}
+
+    .field{margin-top:12px}
+    .label{font-size:12px; font-weight:1100; color:#8a3b5a; margin:0 0 6px}
+    .input{
+      width:100%;
+      border:1px solid var(--line);
+      background:#fff;
+      padding:11px 12px;
+      border-radius: 13px;
+      outline:none;
+      font-size:14px;
+      transition: border-color .2s ease, box-shadow .2s ease;
+    }
+    .input:focus{
+      border-color: rgba(255,79,163,.45);
+      box-shadow: 0 0 0 4px rgba(255,79,163,.12);
+    }
+    .input[readonly]{background:#fff9fd; color:#6b7280}
+
+    .stepper{display:flex; align-items:center; gap:10px}
+    .stepper .mini{
+      width:42px; height:42px;
+      border-radius: 13px;
+      border:1px solid var(--line);
+      background:#fff;
+      cursor:pointer;
+      font-weight:1100;
+      font-size:18px;
+      color:#8c1f4b;
+      box-shadow: 0 8px 18px rgba(31,35,48,.05);
+    }
+    .stepper .mini:hover{border-color:#f0b9d3}
+    .stepper .qty{max-width:120px; text-align:center; font-weight:1100}
+
+    /* File upload */
+    input[type="file"]{display:none}
+    .fileRow{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+    .fileBtn{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:11px 14px;
+      border-radius: 13px;
+      border:1px solid rgba(255,79,163,.28);
+      background: linear-gradient(135deg, rgba(255,79,163,.12), rgba(255,124,194,.12));
+      color:#8c1f4b;
+      font-weight:1100;
+      cursor:pointer;
+      box-shadow: 0 8px 18px rgba(31,35,48,.06);
+      user-select:none;
+    }
+    .fileBtn:hover{border-color: rgba(255,79,163,.40)}
+    .fileName{
+      flex:1;
+      min-width:220px;
+      padding:11px 12px;
+      border-radius: 13px;
+      border:1px solid var(--line);
+      background:#fff;
+      color:var(--muted);
+      font-size:13px;
+    }
+
+    .notice{
+      margin-top:12px;
+      border-radius: 14px;
+      padding:12px;
+      border:1px solid var(--line);
+      background:#fff;
+      font-size:13px;
+      line-height:1.45;
+    }
+    .notice.ok{border-color: rgba(34,197,94,.25); background: rgba(34,197,94,.08)}
+    .notice.bad{border-color: rgba(239,68,68,.25); background: rgba(239,68,68,.08)}
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace}
+
+    .page{display:none}
+    .page.active{display:block}
+
+    /* Admin */
+    table{width:100%; border-collapse:separate; border-spacing:0}
+    th, td{padding:10px 10px; text-align:left; font-size:13px; border-bottom:1px solid var(--line)}
+    th{color:#8a3b5a; font-size:12px; letter-spacing:.2px}
+    .tag{
+      display:inline-flex; align-items:center;
+      padding:5px 10px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background: var(--soft);
+      font-weight:1100;
+      font-size:12px;
+      color:#8c1f4b;
+      white-space:nowrap;
+    }
+    .tag.ok{border-color: rgba(34,197,94,.25); background: rgba(34,197,94,.08); color:#166534}
+    .tag.pending{border-color: rgba(255,79,163,.25); background: rgba(255,79,163,.07); color:#8c1f4b}
+    .tag.processing{border-color: rgba(59,130,246,.25); background: rgba(59,130,246,.08); color:#1d4ed8}
+    .tag.reject{border-color: rgba(239,68,68,.25); background: rgba(239,68,68,.08); color:#7a1b1b}
+
+    /* Modal */
+    .modalBack{
+      position:fixed; inset:0; background: rgba(15,23,42,.35);
+      display:none; align-items:center; justify-content:center;
+      padding:18px; z-index:50;
+    }
+    .modalBack.open{display:flex}
+    .modal{
+      width:min(980px, 98vw);
+      background:#fff;
+      border-radius: 18px;
+      border:1px solid var(--line);
+      box-shadow: 0 28px 85px rgba(15,23,42,.25);
+      overflow:hidden;
+    }
+    .modalHead{
+      padding:14px 16px;
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      border-bottom:1px solid var(--line);
+      background: linear-gradient(135deg, rgba(255,79,163,.08), rgba(255,124,194,.06));
+    }
+    .modalBody{padding:16px}
+    .preview{
+      border:1px solid var(--line);
+      border-radius: 16px;
+      overflow:hidden;
+      background:#fff;
+      min-height:220px;
+      display:flex; align-items:center; justify-content:center;
+      color:var(--muted);
+    }
+    .preview img{max-width:100%; height:auto; display:block}
+    .preview iframe{width:100%; height:420px; border:0}
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <h1>Cando Pro</h1>
+          <p>Lifetime Subscription • only PHP 39</p>
+        </div>
+      </div>
+
+      <div class="row">
+        <span class="badge">Page: <small id="funnelLabel">Landing</small></span>
+        <span class="badge">Cart: <small id="cartBadge">0</small></span>
+        <button class="btn" id="openAdmin" type="button">Admin</button>
+      </div>
+    </div>
+
+    <!-- LANDING -->
+    <section class="page active" id="page-landing">
+      <div class="card">
+        <div class="grid">
+          <div>
+            <span class="pill">One-time deal</span>
+            <h2 class="heroTitle">Get Cando Pro — Lifetime Subscription</h2>
+            <p class="heroSub">Pay once. Use forever. Simple editor experience for only ₱39.</p>
+
+            <div class="line"></div>
+
+            <div class="priceBox">
+              <div class="row" style="justify-content:space-between">
+                <div>
+                  <div class="muted">Today only</div>
+                  <div class="price">₱39</div>
+                </div>
+                <div style="text-align:right">
+                  <div class="muted">Typical price</div>
+                  <div class="strike">₱199</div>
+                </div>
+              </div>
+
+              <ul class="bullets">
+                <li><div class="check">✓</div><div><b>Lifetime access</b><div class="muted">One-time payment, forever use.</div></div></li>
+                <li><div class="check">✓</div><div><b>Fast + minimal</b><div class="muted">Clean UI, easy workflow.</div></div></li>
+                <li><div class="check">✓</div><div><b>Manual GCash checkout</b><div class="muted">Upload receipt + reference for approval.</div></div></li>
+              </ul>
+
+              <div class="row" style="margin-top:12px">
+                <button class="btn primary" id="ctaToOrder" type="button">Get Instant Access →</button>
+                <button class="btn" id="ctaToOrder2" type="button">Order Now</button>
+                <button class="btn" id="ctaToTrack" type="button">Track Order</button>
+              </div>
+
+              <div class="notice" style="margin-top:12px">
+                <b>Simple steps:</b> Order Form → Checkout (GCash) → Upload receipt + reference → Verify
+              </div>
+            </div>
+
+            <div class="line"></div>
+
+            <h3 class="sectionTitle">Contact Support</h3>
+            <p class="muted">
+              <b>Email:</b> <a href="mailto:support@example.com">support@example.com</a><br>
+              <b>Messenger:</b> YourPageName<br>
+              <b>Phone:</b> +63 900 000 0000
+            </p>
+          </div>
+
+          <div>
+            <h3 class="sectionTitle">What customers say</h3>
+            <div class="quote"><div class="stars">★★★★★</div>“Sulit for ₱39. Simple and smooth.”<div class="who">— Mika</div></div>
+            <div class="quote"><div class="stars">★★★★★</div>“Clean editor, mabilis gamitin.”<div class="who">— Carlo</div></div>
+            <div class="quote"><div class="stars">★★★★☆</div>“Lightweight and fast.”<div class="who">— Janelle</div></div>
+            <div class="quote"><div class="stars">★★★★★</div>“Easy checkout steps.”<div class="who">— Paulo</div></div>
+            <div class="quote"><div class="stars">★★★★★</div>“Support mabilis mag-reply.”<div class="who">— Aira</div></div>
+
+            <div class="line"></div>
+            <div class="notice">
+              <b>Order Status meanings:</b><br>
+              • <b>Pending</b> = received, waiting review<br>
+              • <b>Processing</b> = being checked / being sent<br>
+              • <b>Verified (Already Sent on your email)</b> = completed
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ORDER FORM -->
+    <section class="page" id="page-order">
+      <div class="card">
+        <div class="row" style="justify-content:space-between">
+          <div>
+            <h2 class="sectionTitle">Order Form</h2>
+            <p class="muted">Select quantity then click <b>Add to Cart</b>.</p>
+          </div>
+          <button class="btn" id="backToLanding" type="button">← Back</button>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="grid2">
+          <div class="card" style="box-shadow:none">
+            <div class="row" style="justify-content:space-between">
+              <div>
+                <div style="font-weight:1100">Cando Pro — Lifetime</div>
+                <div class="muted">₱39 per license</div>
+              </div>
+              <div class="price" style="font-size:26px">₱39</div>
+            </div>
+
+            <div class="line"></div>
+
+            <div class="label">Quantity</div>
+            <div class="stepper">
+              <button class="mini" id="minus" type="button">−</button>
+              <input class="input qty" id="qty" value="1" inputmode="numeric" />
+              <button class="mini" id="plus" type="button">+</button>
+            </div>
+
+            <div class="field">
+              <div class="label">Subtotal</div>
+              <div class="price" style="font-size:30px">₱<span id="subtotal">39</span></div>
+            </div>
+
+            <div class="row" style="margin-top:14px">
+              <button class="btn primary" id="addToCart" type="button">Add to Cart</button>
+              <button class="btn" id="toCheckout" type="button">Go to Checkout →</button>
+            </div>
+
+            <div class="notice" style="margin-top:12px">
+              <b>Reminder:</b> You need items in cart before checkout.
+            </div>
+          </div>
+
+          <div class="card" style="box-shadow:none">
+            <div class="sectionTitle">Cart Summary</div>
+            <div class="muted">Quantity: <b id="cartQtyText">0</b></div>
+            <div class="line"></div>
+            <div class="muted">Total</div>
+            <div class="price">₱<span id="cartTotalText">0</span></div>
+
+            <div class="row" style="margin-top:12px">
+              <button class="btn danger" id="clearCart" type="button">Clear Cart</button>
+              <button class="btn" id="toTrackFromOrder" type="button">Track Order</button>
+            </div>
+
+            <div class="line"></div>
+            <div class="notice">
+              <b>Next step:</b> Pay via GCash and upload receipt + reference.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CHECKOUT -->
+    <section class="page" id="page-checkout">
+      <div class="card">
+        <div class="row" style="justify-content:space-between">
+          <div>
+            <h2 class="sectionTitle">Checkout</h2>
+            <p class="muted">Manual payment via GCash (upload receipt + reference).</p>
+          </div>
+          <button class="btn" id="backToOrder" type="button">← Back</button>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="grid2">
+          <div class="card" style="box-shadow:none">
+            <div class="sectionTitle">Your Order</div>
+            <div class="muted">Product: <b>Cando Pro — Lifetime</b></div>
+            <div class="muted">Quantity: <b id="checkoutQtyText">0</b></div>
+            <div class="line"></div>
+            <div class="muted">Total to pay</div>
+            <div class="price">₱<span id="payTotal">0</span></div>
+
+            <div class="line"></div>
+
+            <div class="sectionTitle">Pay via GCash</div>
+            <p class="muted" style="margin:0">
+              <b>GCash Name:</b> <span id="gcashName">YOUR NAME</span><br>
+              <b>GCash Number:</b> <span id="gcashNumber">09XX-XXX-XXXX</span>
+            </p>
+
+            <div class="notice" style="margin-top:12px">
+              After payment, submit the receipt + reference on the right.
+            </div>
+          </div>
+
+          <div class="card" style="box-shadow:none">
+            <div class="sectionTitle">Submit Payment Proof</div>
+
+            <div class="notice" id="checkoutGuard">
+              <b>Cart is empty:</b> Please add to cart in the Order Form page first.
+            </div>
+
+            <div class="field">
+              <div class="label">Full name</div>
+              <input class="input" id="name" placeholder="Juan Dela Cruz" />
+            </div>
+
+            <div class="field">
+              <div class="label">Email</div>
+              <input class="input" id="email" placeholder="juan@email.com" />
+            </div>
+
+            <div class="field">
+              <div class="label">GCash Reference No.</div>
+              <input class="input" id="ref" placeholder="e.g., 123456789012" />
+            </div>
+
+            <div class="field">
+              <div class="label">Upload receipt (image/pdf)</div>
+              <div class="fileRow">
+                <label class="fileBtn" for="receipt">Choose file</label>
+                <div class="fileName" id="fileInfo">No file selected</div>
+              </div>
+              <input id="receipt" type="file" accept="image/*,.pdf" />
+            </div>
+
+            <div class="row" style="margin-top:14px">
+              <button class="btn primary" id="submit" type="button">Submit to System</button>
+              <button class="btn" id="download" type="button" disabled>Download submission (JSON)</button>
+              <button class="btn" id="toTrackFromCheckout" type="button">Track Order</button>
+            </div>
+
+            <div id="notice" class="notice" style="display:none"></div>
+
+            <div class="muted" style="margin-top:10px">
+              After submitting, you will get an <b>Order ID</b>. Use it in the Track Order page.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ORDER TRACKER (CUSTOMER) -->
+    <section class="page" id="page-tracker">
+      <div class="card">
+        <div class="row" style="justify-content:space-between">
+          <div>
+            <h2 class="sectionTitle">Track Your Order</h2>
+            <p class="muted">Enter your <b>Order ID</b> to check status.</p>
+          </div>
+          <button class="btn" id="backFromTracker" type="button">← Back</button>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="grid2">
+          <div class="card" style="box-shadow:none">
+            <div class="field">
+              <div class="label">Order ID</div>
+              <input class="input" id="trackOrderId" placeholder="e.g., CANDO-XXXX-XXXXX" />
+            </div>
+
+            <div class="row" style="margin-top:14px">
+              <button class="btn primary" id="checkOrderBtn" type="button">Check Status</button>
+              <button class="btn" id="pasteLastOrderBtn" type="button">Paste last Order ID</button>
+            </div>
+
+            <div id="trackNotice" class="notice" style="display:none"></div>
+
+            <div class="notice" style="margin-top:12px">
+              <b>Status guide:</b><br>
+              • <b>Pending</b> = received, waiting review<br>
+              • <b>Processing</b> = being checked / being sent<br>
+              • <b>Verified (Already Sent on your email)</b> = completed
+            </div>
+          </div>
+
+          <div class="card" style="box-shadow:none">
+            <div class="sectionTitle">Tip</div>
+            <div class="muted">
+              After you submit payment proof, the system shows an Order ID (also saved locally as “last submission”).<br><br>
+              If you used another device/browser, it won’t show because this demo uses localStorage.
+            </div>
+
+            <div class="line"></div>
+
+            <div class="sectionTitle">Support</div>
+            <p class="muted">
+              <b>Email:</b> <a href="mailto:support@example.com">support@example.com</a><br>
+              <b>Messenger:</b> YourPageName
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ADMIN LOGIN -->
+    <section class="page" id="page-admin-login">
+      <div class="card">
+        <div class="row" style="justify-content:space-between">
+          <div>
+            <h2 class="sectionTitle">Admin Login</h2>
+            <p class="muted">Local-only demo auth (later: Supabase + Vercel).</p>
+          </div>
+          <button class="btn" id="adminBackHome" type="button">← Back</button>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="grid2">
+          <div>
+            <div class="field">
+              <div class="label">Username</div>
+              <input class="input" id="adminUser" placeholder="Username" />
+            </div>
+            <div class="field">
+              <div class="label">Password</div>
+              <input class="input" id="adminPass" type="password" placeholder="Password" />
+            </div>
+
+            <div class="row" style="margin-top:14px">
+              <button class="btn primary" id="adminLoginBtn" type="button">Login</button>
+              <button class="btn" id="adminFillPreset" type="button">Use preset</button>
+            </div>
+
+            <div id="adminLoginNotice" class="notice" style="display:none"></div>
+
+            <div class="notice" style="margin-top:12px">
+              Preset: <b>Username/Password:</b> <span class="mono">Canvasphere@0625</span>
+            </div>
+          </div>
+
+          <div class="card" style="box-shadow:none">
+            <div class="sectionTitle">Admin can verify</div>
+            <div class="muted">
+              • View receipt file (image/pdf)<br>
+              • Check GCash reference<br>
+              • Mark status: Pending / Processing / Verified (Sent) / Rejected<br>
+              • Export all orders (JSON)
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ADMIN DASHBOARD -->
+    <section class="page" id="page-admin-dashboard">
+      <div class="card">
+        <div class="row" style="justify-content:space-between">
+          <div>
+            <h2 class="sectionTitle">Admin Dashboard</h2>
+            <p class="muted">Payment verification (localStorage).</p>
+          </div>
+          <div class="row">
+            <button class="btn" id="adminLogout" type="button">Logout</button>
+            <button class="btn" id="adminBackHome2" type="button">Back to Funnel</button>
+          </div>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="row" style="justify-content:space-between">
+          <div class="row">
+            <span class="badge">Total: <small id="adminCount">0</small></span>
+            <span class="badge">Pending: <small id="adminPending">0</small></span>
+            <span class="badge">Processing: <small id="adminProcessing">0</small></span>
+          </div>
+          <div class="row">
+            <button class="btn" id="adminExport" type="button">Export all (JSON)</button>
+            <button class="btn danger" id="adminClearAll" type="button">Clear all</button>
+          </div>
+        </div>
+
+        <div class="line"></div>
+
+        <div style="overflow:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Order ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Qty</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th>Receipt</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="adminTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- MODAL -->
+  <div class="modalBack" id="modalBack">
+    <div class="modal">
+      <div class="modalHead">
+        <div>
+          <div style="font-weight:1100">Submission</div>
+          <div class="muted" id="modalSub" style="font-size:12px"></div>
+        </div>
+        <button class="btn" id="modalClose" type="button">Close</button>
+      </div>
+      <div class="modalBody">
+        <div class="grid2">
+          <div class="card" style="box-shadow:none">
+            <div class="muted">Order ID</div>
+            <div class="mono" style="font-weight:1100" id="mOrderId">—</div>
+            <div class="line"></div>
+
+            <div class="muted">Customer</div>
+            <div style="font-weight:1100" id="mName">—</div>
+            <div class="muted" id="mEmail">—</div>
+
+            <div class="line"></div>
+
+            <div class="muted">Payment</div>
+            <div class="muted"><b>Reference:</b> <span class="mono" id="mRef">—</span></div>
+            <div class="muted"><b>Qty:</b> <span id="mQty">—</span></div>
+            <div class="muted"><b>Total:</b> ₱<span id="mTotal">—</span></div>
+            <div class="muted"><b>File:</b> <span id="mFile">—</span></div>
+
+            <div class="line"></div>
+
+            <div class="row">
+              <button class="btn" id="mPending" type="button">Pending</button>
+              <button class="btn" id="mProcessing" type="button">Processing</button>
+              <button class="btn primary" id="mVerifiedSent" type="button">Verified (Sent)</button>
+              <button class="btn danger" id="mReject" type="button">Rejected</button>
+            </div>
+
+            <div class="row" style="margin-top:10px">
+              <button class="btn" id="mOpenNewTab" type="button">Open receipt</button>
+              <button class="btn danger" id="mDelete" type="button">Delete</button>
+            </div>
+
+            <div id="mNotice" class="notice" style="display:none"></div>
+          </div>
+
+          <div>
+            <div class="sectionTitle">Receipt preview</div>
+            <div class="preview" id="mPreview">No preview</div>
+            <div class="muted" style="margin-top:10px">If preview is blank, click “Open receipt”.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===================== CONFIG =====================
+    const PRODUCT = { name: "Cando Pro - Lifetime Subscription", unitPrice: 39 };
+
+    // EDIT THESE:
+    const GCash = { name: "YOUR NAME", number: "09XX-XXX-XXXX" };
+
+    // Admin credentials (requested)
+    const ADMIN = { username: "Canvasphere@0625", password: "Canvasphere@0625" };
+
+    // Storage keys
+    const KEY_ORDERS = "cando_orders";
+    const KEY_LAST = "cando_last_submission";
+    const KEY_ADMIN_AUTH = "cando_admin_authed";
+
+    // Status values (customer-facing)
+    const STATUS = {
+      PENDING: "Pending",
+      PROCESSING: "Processing",
+      VERIFIED_SENT: "Verified (Already Sent on your email)",
+      REJECTED: "Rejected"
+    };
+
+    // ===================== STATE =====================
+    let qty = 1;
+    let cartQty = 0;
+    let lastSubmission = null;
+    let modalOrderId = null;
+    let prevPageBeforeTracker = "page-landing";
+
+    // ===================== HELPERS =====================
+    const $ = (id) => document.getElementById(id);
+    const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
+    const intOnly = (v, fallback) => {
+      const n = parseInt(String(v).replace(/[^\d]/g,""), 10);
+      return Number.isNaN(n) ? fallback : n;
+    };
+    const total = (q) => PRODUCT.unitPrice * q;
+
+    function setFunnelLabel(txt){ $("funnelLabel").textContent = txt; }
+    function setCartBadge(){ $("cartBadge").textContent = String(cartQty); }
+
+    function showPage(which){
+      const pages = [
+        "page-landing","page-order","page-checkout","page-tracker",
+        "page-admin-login","page-admin-dashboard"
+      ];
+      pages.forEach(p => $(p).classList.remove("active"));
+      $(which).classList.add("active");
+      window.scrollTo({top:0, behavior:"smooth"});
+      render();
+
+      if(which === "page-landing") setFunnelLabel("Landing");
+      if(which === "page-order") setFunnelLabel("Order Form");
+      if(which === "page-checkout") setFunnelLabel("Checkout");
+      if(which === "page-tracker") setFunnelLabel("Track Order");
+      if(which.startsWith("page-admin")) setFunnelLabel("Admin");
+    }
+
+    function render(){
+      setCartBadge();
+
+      // order form
+      $("qty").value = qty;
+      $("subtotal").textContent = total(qty);
+      $("cartQtyText").textContent = cartQty;
+      $("cartTotalText").textContent = total(cartQty);
+
+      // checkout
+      $("checkoutQtyText").textContent = cartQty;
+      $("payTotal").textContent = total(cartQty);
+      $("gcashName").textContent = GCash.name;
+      $("gcashNumber").textContent = GCash.number;
+
+      const hasCart = cartQty > 0;
+      $("checkoutGuard").style.display = hasCart ? "none" : "block";
+      $("submit").disabled = !hasCart;
+
+      if(isAdminAuthed()) renderAdminTable();
+    }
+
+    function showNotice(elId, type, html){
+      const box = $(elId);
+      box.style.display = "block";
+      box.classList.remove("ok","bad");
+      box.classList.add(type === "ok" ? "ok" : "bad");
+      box.innerHTML = html;
+    }
+
+    function downloadJSON(filename, obj){
+      const blob = new Blob([JSON.stringify(obj, null, 2)], {type:"application/json"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function makeId(){
+      return "CANDO-" + Date.now().toString(36).toUpperCase() + "-" + Math.random().toString(36).slice(2,7).toUpperCase();
+    }
+
+    function loadOrders(){
+      try{
+        const raw = localStorage.getItem(KEY_ORDERS);
+        const arr = raw ? JSON.parse(raw) : [];
+        return Array.isArray(arr) ? arr : [];
+      }catch{ return []; }
+    }
+    function saveOrders(arr){ localStorage.setItem(KEY_ORDERS, JSON.stringify(arr)); }
+    function upsertOrder(order){
+      const orders = loadOrders();
+      const idx = orders.findIndex(o => o.orderId === order.orderId);
+      if(idx >= 0) orders[idx] = order;
+      else orders.unshift(order);
+      saveOrders(orders);
+    }
+    function findOrder(orderId){ return loadOrders().find(o => o.orderId === orderId) || null; }
+    function deleteOrder(orderId){ saveOrders(loadOrders().filter(o => o.orderId !== orderId)); }
+    function setOrderStatus(orderId, status){
+      const orders = loadOrders();
+      const idx = orders.findIndex(o => o.orderId === orderId);
+      if(idx >= 0){
+        orders[idx].status = status;
+        orders[idx].statusUpdatedAtISO = new Date().toISOString();
+        saveOrders(orders);
+      }
+    }
+
+    function isAdminAuthed(){ return sessionStorage.getItem(KEY_ADMIN_AUTH) === "1"; }
+    function setAdminAuthed(val){
+      if(val) sessionStorage.setItem(KEY_ADMIN_AUTH, "1");
+      else sessionStorage.removeItem(KEY_ADMIN_AUTH);
+    }
+
+    function bytesToKB(n){ return Math.round(n/1024); }
+    function fmtDate(iso){
+      try{ return new Date(iso).toLocaleString(); }catch{ return iso; }
+    }
+    function escapeHtml(str){
+      return String(str).replace(/[&<>"']/g, s => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+      }[s]));
+    }
+
+    function fileToDataURL(file){
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error("File read error"));
+        reader.onload = () => resolve(String(reader.result));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function statusTagClass(status){
+      if(status === STATUS.VERIFIED_SENT) return "ok";
+      if(status === STATUS.PROCESSING) return "processing";
+      if(status === STATUS.REJECTED) return "reject";
+      return "pending";
+    }
+
+    function statusCustomerMessage(status, order){
+      const updated = order?.statusUpdatedAtISO ? `<br><span class="muted">Updated: ${escapeHtml(fmtDate(order.statusUpdatedAtISO))}</span>` : "";
+      if(status === STATUS.PENDING){
+        return `<b>Status: Pending</b><br>We received your submission and will verify your payment soon.${updated}`;
+      }
+      if(status === STATUS.PROCESSING){
+        return `<b>Status: Processing</b><br>Your payment is being checked / your access is being prepared.${updated}`;
+      }
+      if(status === STATUS.VERIFIED_SENT){
+        return `<b>Status: Verified (Already Sent on your email)</b><br>Your access was already sent to <b>${escapeHtml(order?.customer?.email || "your email")}</b>.${updated}`;
+      }
+      if(status === STATUS.REJECTED){
+        return `<b>Status: Rejected</b><br>There was an issue with the receipt/reference. Please contact support.${updated}`;
+      }
+      return `<b>Status: ${escapeHtml(status || "Unknown")}</b>${updated}`;
+    }
+
+    // ===================== NAV (FUNNEL) =====================
+    $("ctaToOrder").onclick = () => showPage("page-order");
+    $("ctaToOrder2").onclick = () => showPage("page-order");
+    $("backToLanding").onclick = () => showPage("page-landing");
+    $("toCheckout").onclick = () => showPage("page-checkout");
+    $("backToOrder").onclick = () => showPage("page-order");
+
+    // ===================== TRACKER NAV =====================
+    function goTracker(from){
+      prevPageBeforeTracker = from;
+      showPage("page-tracker");
+    }
+    $("ctaToTrack").onclick = () => goTracker("page-landing");
+    $("toTrackFromOrder").onclick = () => goTracker("page-order");
+    $("toTrackFromCheckout").onclick = () => goTracker("page-checkout");
+    $("backFromTracker").onclick = () => showPage(prevPageBeforeTracker || "page-landing");
+
+    // ===================== ORDER FORM / CART =====================
+    $("minus").onclick = () => { qty = clamp(qty - 1, 1, 99); render(); };
+    $("plus").onclick  = () => { qty = clamp(qty + 1, 1, 99); render(); };
+    $("qty").oninput   = () => { qty = clamp(intOnly($("qty").value, 1), 1, 99); render(); };
+
+    $("addToCart").onclick = () => {
+      cartQty = clamp(cartQty + qty, 0, 999);
+      render();
+      alert("Added to cart. Cart qty: " + cartQty);
+    };
+    $("clearCart").onclick = () => {
+      if(!confirm("Clear cart?")) return;
+      cartQty = 0;
+      render();
+    };
+
+    // ===================== CHECKOUT (GCASH + UPLOAD) =====================
+    $("receipt").onchange = () => {
+      const f = $("receipt").files && $("receipt").files[0];
+      $("fileInfo").textContent = f ? `${f.name} (${bytesToKB(f.size)} KB)` : "No file selected";
+    };
+
+    $("submit").onclick = async () => {
+      if(cartQty <= 0) return;
+
+      const name = $("name").value.trim();
+      const email = $("email").value.trim();
+      const ref = $("ref").value.trim();
+      const file = $("receipt").files && $("receipt").files[0];
+
+      if(!name) return showNotice("notice", "bad", "Please enter your full name.");
+      if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showNotice("notice", "bad", "Please enter a valid email.");
+      if(!ref) return showNotice("notice", "bad", "Please enter your GCash reference number.");
+      if(!file) return showNotice("notice", "bad", "Please upload your receipt.");
+
+      let receiptDataURL = "";
+      try{ receiptDataURL = await fileToDataURL(file); }
+      catch{ return showNotice("notice", "bad", "Could not read receipt file. Try again."); }
+
+      const order = {
+        orderId: makeId(),
+        createdAtISO: new Date().toISOString(),
+        item: { product: PRODUCT.name, unitPrice: PRODUCT.unitPrice, quantity: cartQty, total: total(cartQty) },
+        payment: {
+          method: "GCash (manual)",
+          payToName: GCash.name,
+          payToNumber: GCash.number,
+          referenceNumber: ref,
+          receiptFile: { name: file.name, type: file.type || "unknown", sizeBytes: file.size },
+          receiptDataURL
+        },
+        customer: { name, email },
+        status: STATUS.PENDING
+      };
+
+      try{
+        upsertOrder(order);
+        lastSubmission = order;
+        localStorage.setItem(KEY_LAST, JSON.stringify(order));
+        $("download").disabled = false;
+
+        showNotice("notice", "ok",
+          `Submitted! Your Order ID is: <b class="mono">${order.orderId}</b><br>` +
+          `Status: <b>${STATUS.PENDING}</b><br>` +
+          `You can now check it in <b>Track Order</b>.`
+        );
+      }catch{
+        showNotice("notice", "bad", "Saving failed (localStorage limit). Try a smaller receipt image/PDF.");
+      }
+    };
+
+    $("download").onclick = () => {
+      if(!lastSubmission){
+        try{ lastSubmission = JSON.parse(localStorage.getItem(KEY_LAST) || "null"); }catch{}
+      }
+      if(!lastSubmission) return;
+      downloadJSON(lastSubmission.orderId + ".json", lastSubmission);
+    };
+
+    // ===================== ORDER TRACKER LOGIC =====================
+    $("pasteLastOrderBtn").onclick = () => {
+      try{
+        const last = JSON.parse(localStorage.getItem(KEY_LAST) || "null");
+        if(last?.orderId){
+          $("trackOrderId").value = last.orderId;
+        }else{
+          showNotice("trackNotice", "bad", "No last Order ID found on this browser.");
+        }
+      }catch{
+        showNotice("trackNotice", "bad", "No last Order ID found on this browser.");
+      }
+    };
+
+    $("checkOrderBtn").onclick = () => {
+      const id = $("trackOrderId").value.trim();
+      if(!id) return showNotice("trackNotice", "bad", "Please enter your Order ID.");
+
+      const order = findOrder(id);
+      if(!order){
+        return showNotice("trackNotice", "bad",
+          `Order not found.<br><span class="muted">If you used a different device/browser, this demo cannot see it because it uses localStorage.</span>`
+        );
+      }
+      const status = order.status || STATUS.PENDING;
+      showNotice("trackNotice", "ok", statusCustomerMessage(status, order));
+    };
+
+    // ===================== ADMIN NAV =====================
+    $("openAdmin").onclick = () => {
+      if(isAdminAuthed()) showPage("page-admin-dashboard");
+      else showPage("page-admin-login");
+    };
+    $("adminBackHome").onclick = () => showPage("page-landing");
+    $("adminBackHome2").onclick = () => showPage("page-landing");
+
+    // ===================== ADMIN LOGIN =====================
+    $("adminFillPreset").onclick = () => {
+      $("adminUser").value = ADMIN.username;
+      $("adminPass").value = ADMIN.password;
+    };
+    $("adminLoginBtn").onclick = () => {
+      const u = $("adminUser").value.trim();
+      const p = $("adminPass").value;
+      if(u === ADMIN.username && p === ADMIN.password){
+        setAdminAuthed(true);
+        $("adminUser").value = "";
+        $("adminPass").value = "";
+        $("adminLoginNotice").style.display = "none";
+        showPage("page-admin-dashboard");
+      }else{
+        showNotice("adminLoginNotice", "bad", "Invalid username or password.");
+      }
+    };
+    $("adminLogout").onclick = () => {
+      setAdminAuthed(false);
+      showPage("page-admin-login");
+    };
+
+    // ===================== ADMIN DASHBOARD =====================
+    function renderAdminTable(){
+      const orders = loadOrders();
+      const tbody = $("adminTableBody");
+      tbody.innerHTML = "";
+
+      const pendingCount = orders.filter(o => (o.status || STATUS.PENDING) === STATUS.PENDING).length;
+      const processingCount = orders.filter(o => (o.status || STATUS.PENDING) === STATUS.PROCESSING).length;
+
+      $("adminCount").textContent = orders.length;
+      $("adminPending").textContent = pendingCount;
+      $("adminProcessing").textContent = processingCount;
+
+      if(orders.length === 0){
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td colspan="9" class="muted" style="padding:14px">No submissions yet.</td>`;
+        tbody.appendChild(tr);
+        return;
+      }
+
+      for(const o of orders){
+        const status = o.status || STATUS.PENDING;
+        const tagClass = statusTagClass(status);
+        const receiptType = (o.payment?.receiptFile?.type || "").toLowerCase();
+        const receiptLabel = receiptType.includes("pdf") ? "PDF" : "Image";
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="muted">${escapeHtml(fmtDate(o.createdAtISO))}</td>
+          <td class="mono">${escapeHtml(o.orderId)}</td>
+          <td>${escapeHtml(o.customer?.name || "")}</td>
+          <td class="muted">${escapeHtml(o.customer?.email || "")}</td>
+          <td>${o.item?.quantity ?? ""}</td>
+          <td>₱${o.item?.total ?? ""}</td>
+          <td><span class="tag ${tagClass}">${escapeHtml(status)}</span></td>
+          <td><span class="tag">${receiptLabel}</span></td>
+          <td><button class="btn" data-view="${escapeHtml(o.orderId)}" type="button">View</button></td>
+        `;
+        tbody.appendChild(tr);
+      }
+
+      tbody.querySelectorAll("[data-view]").forEach(btn => {
+        btn.addEventListener("click", () => openModal(btn.getAttribute("data-view")));
+      });
+    }
+
+    $("adminExport").onclick = () => downloadJSON("cando_orders_export.json", loadOrders());
+    $("adminClearAll").onclick = () => {
+      if(!confirm("Delete ALL submissions from this browser's localStorage?")) return;
+      saveOrders([]);
+      renderAdminTable();
+    };
+
+    // ===================== MODAL =====================
+    const modalBack = $("modalBack");
+    $("modalClose").onclick = closeModal;
+    modalBack.addEventListener("click", (e) => { if(e.target === modalBack) closeModal(); });
+
+    function openModal(orderId){
+      modalOrderId = orderId;
+      const o = findOrder(orderId);
+      if(!o) return alert("Not found");
+
+      $("modalSub").textContent = fmtDate(o.createdAtISO);
+      $("mOrderId").textContent = o.orderId;
+      $("mName").textContent = o.customer?.name || "—";
+      $("mEmail").textContent = o.customer?.email || "—";
+      $("mRef").textContent = o.payment?.referenceNumber || "—";
+      $("mQty").textContent = o.item?.quantity ?? "—";
+      $("mTotal").textContent = o.item?.total ?? "—";
+      $("mFile").textContent = o.payment?.receiptFile ? `${o.payment.receiptFile.name} (${Math.round(o.payment.receiptFile.sizeBytes/1024)} KB)` : "—";
+
+      const preview = $("mPreview");
+      preview.innerHTML = "";
+      const dataURL = o.payment?.receiptDataURL || "";
+      const type = (o.payment?.receiptFile?.type || "").toLowerCase();
+
+      if(!dataURL){
+        preview.textContent = "No receipt stored.";
+      }else if(type.includes("pdf")){
+        const iframe = document.createElement("iframe");
+        iframe.src = dataURL;
+        preview.appendChild(iframe);
+      }else{
+        const img = document.createElement("img");
+        img.src = dataURL;
+        img.alt = "Receipt";
+        preview.appendChild(img);
+      }
+
+      $("mPending").onclick = () => { setOrderStatus(modalOrderId, STATUS.PENDING); modalNotice("ok", `Status set to <b>${STATUS.PENDING}</b>.`); renderAdminTable(); };
+      $("mProcessing").onclick = () => { setOrderStatus(modalOrderId, STATUS.PROCESSING); modalNotice("ok", `Status set to <b>${STATUS.PROCESSING}</b>.`); renderAdminTable(); };
+      $("mVerifiedSent").onclick = () => { setOrderStatus(modalOrderId, STATUS.VERIFIED_SENT); modalNotice("ok", `Status set to <b>${STATUS.VERIFIED_SENT}</b>.`); renderAdminTable(); };
+      $("mReject").onclick = () => { setOrderStatus(modalOrderId, STATUS.REJECTED); modalNotice("ok", `Status set to <b>${STATUS.REJECTED}</b>.`); renderAdminTable(); };
+
+      $("mOpenNewTab").onclick = () => {
+        const o2 = findOrder(modalOrderId);
+        const url = o2?.payment?.receiptDataURL;
+        if(!url) return modalNotice("bad","No receipt to open.");
+        window.open(url, "_blank");
+      };
+
+      $("mDelete").onclick = () => {
+        if(!confirm("Delete this submission?")) return;
+        deleteOrder(modalOrderId);
+        modalNotice("ok","Deleted.");
+        setTimeout(() => { closeModal(); renderAdminTable(); }, 250);
+      };
+
+      $("mNotice").style.display = "none";
+      modalBack.classList.add("open");
+    }
+
+    function closeModal(){
+      modalBack.classList.remove("open");
+      modalOrderId = null;
+    }
+
+    function modalNotice(type, html){
+      const box = $("mNotice");
+      box.style.display = "block";
+      box.classList.remove("ok","bad");
+      box.classList.add(type === "ok" ? "ok" : "bad");
+      box.innerHTML = html;
+    }
+
+    // ===================== INIT =====================
+    setFunnelLabel("Landing");
+    setCartBadge();
+    render();
+    showPage("page-landing");
+  </script>
+</body>
+</html>
+
