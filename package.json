@@ -1,0 +1,7 @@
+{
+  "name": "cando-funnel",
+  "private": true,
+  "dependencies": {
+    "formidable": "^3.5.1"
+  }
+}
