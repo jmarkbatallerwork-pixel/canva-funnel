@@ -1093,102 +1093,76 @@
     $("modalClose").onclick = closeModal;
     modalBack.addEventListener("click", (e) => { if(e.target === modalBack) closeModal(); });
 
-async function openModal(orderId){
-  modalOrderId = orderId;
+    async function openModal(orderId){
+      modalOrderId = orderId;
+      modalReceiptUrl = null;
 
-  // open modal immediately (show loading)
-  $("modalSub").textContent = "Loading…";
-  $("mOrderId").textContent = orderId;
-  $("mName").textContent = "—";
-  $("mEmail").textContent = "—";
-  $("mRef").textContent = "—";
-  $("mQty").textContent = "—";
-  $("mTotal").textContent = "—";
-  $("mFile").textContent = "—";
-  $("mPreview").innerHTML = "Loading preview…";
-  $("mNotice").style.display = "none";
-  modalBack.classList.add("open");
+      $("mNotice").style.display = "none";
+      $("mPreview").textContent = "Loading…";
 
-  try{
-    const r = await fetch(`/api/admin/orders?order_id=${encodeURIComponent(orderId)}&t=${Date.now()}`, {
-      headers: { "x-admin-auth": ADMIN.password },
-      cache: "no-store"
-    });
-    const j = await r.json().catch(() => ({}));
+      try{
+        const r = await fetch(`/api/admin/order?order_id=${encodeURIComponent(orderId)}&t=${Date.now()}`, {
+          headers: { "x-admin-auth": ADMIN.password },
+          cache:"no-store"
+        });
+        const j = await r.json().catch(()=>({}));
+        if(!r.ok || !j.ok) throw new Error(j.error || "Not found");
 
-    if(!r.ok || !j.ok){
-      throw new Error(j.error || "Not found");
+        const o = j.order;
+        $("modalSub").textContent = fmtDate(o.created_at || "");
+        $("mOrderId").textContent = o.order_id || "—";
+        $("mName").textContent = o.name || "—";
+        $("mEmail").textContent = o.email || "—";
+        $("mRef").textContent = o.gcash_ref || "—";
+        $("mQty").textContent = o.qty ?? "—";
+        $("mTotal").textContent = o.total ?? "—";
+        $("mFile").textContent = o.receipt_path || "—";
+
+        modalReceiptUrl = o.receipt_url || null;
+
+        // preview
+        const prev = $("mPreview");
+        prev.innerHTML = "";
+        if(!modalReceiptUrl){
+          prev.textContent = "No receipt URL.";
+        }else if((o.receipt_path || "").toLowerCase().includes(".pdf")){
+          const iframe = document.createElement("iframe");
+          iframe.src = modalReceiptUrl;
+          prev.appendChild(iframe);
+        }else{
+          const img = document.createElement("img");
+          img.src = modalReceiptUrl;
+          img.alt = "Receipt";
+          prev.appendChild(img);
+        }
+
+        modalBack.classList.add("open");
+
+      }catch(e){
+        alert("Not found");
+        closeModal();
+      }
     }
 
-    const o = j.order || {};
-    const receiptUrl = j.receipt_url || null;
-
-    const createdISO = o.created_at || o.createdAtISO || o.created_at_iso || new Date().toISOString();
-    $("modalSub").textContent = fmtDate(createdISO);
-
-    $("mOrderId").textContent = o.order_id || orderId;
-    $("mName").textContent = o.name || o.customer_name || "—";
-    $("mEmail").textContent = o.email || "—";
-    $("mRef").textContent = o.gcash_ref || o.reference_no || o.ref || "—";
-    $("mQty").textContent = (o.qty ?? o.quantity ?? "—");
-    $("mTotal").textContent = (o.total ?? "—");
-    $("mFile").textContent = o.receipt_path || "—";
-
-    // preview receipt
-    const preview = $("mPreview");
-    preview.innerHTML = "";
-    if(!receiptUrl){
-      preview.textContent = "No receipt URL available.";
-    }else if(String(o.receipt_path || "").toLowerCase().includes(".pdf")){
-      const iframe = document.createElement("iframe");
-      iframe.src = receiptUrl;
-      preview.appendChild(iframe);
-    }else{
-      const img = document.createElement("img");
-      img.src = receiptUrl;
-      img.alt = "Receipt";
-      preview.appendChild(img);
+    async function adminSetStatus(status){
+      if(!modalOrderId) return;
+      try{
+        const r = await fetch("/api/admin/status", {
+          method:"POST",
+          headers: {
+            "Content-Type":"application/json",
+            "x-admin-auth": ADMIN.password
+          },
+          body: JSON.stringify({ order_id: modalOrderId, status })
+        });
+        const j = await r.json().catch(()=>({}));
+        if(!r.ok || !j.ok) throw new Error(j.error || "Update failed");
+        modalNotice("ok", `Status updated to <b>${escapeHtml(status)}</b>.`);
+        await renderAdminTable();
+      }catch(e){
+        modalNotice("bad", escapeHtml(e.message || "Update failed"));
+      }
     }
-
-    // Buttons
-    $("mOpenNewTab").onclick = () => {
-      if(!receiptUrl) return modalNotice("bad", "No receipt to open.");
-      window.open(receiptUrl, "_blank");
-    };
-
-    // For now: status buttons show message only (needs API endpoint to update status)
-async function adminSetStatus(orderId, newStatus){
-  const r = await fetch("/api/admin/status", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-admin-auth": ADMIN.password
-    },
-    body: JSON.stringify({ order_id: orderId, status: newStatus })
-  });
-  const j = await r.json().catch(() => ({}));
-  if(!r.ok || !j.ok) throw new Error(j.details || j.error || "Status update failed");
-  return j;
-}
-
-// in openModal(), after you loaded the order:
-$("mPending").onclick = async () => {
-  try { await adminSetStatus(orderId, STATUS.PENDING); modalNotice("ok", `Status set to <b>${STATUS.PENDING}</b>.`); await renderAdminTable(); }
-  catch(e){ modalNotice("bad", escapeHtml(e.message)); }
-};
-$("mProcessing").onclick = async () => {
-  try { await adminSetStatus(orderId, STATUS.PROCESSING); modalNotice("ok", `Status set to <b>${STATUS.PROCESSING}</b>.`); await renderAdminTable(); }
-  catch(e){ modalNotice("bad", escapeHtml(e.message)); }
-};
-$("mVerifiedSent").onclick = async () => {
-  try { await adminSetStatus(orderId, STATUS.VERIFIED_SENT); modalNotice("ok", `Status set to <b>${STATUS.VERIFIED_SENT}</b>.`); await renderAdminTable(); }
-  catch(e){ modalNotice("bad", escapeHtml(e.message)); }
-};
-$("mReject").onclick = async () => {
-  try { await adminSetStatus(orderId, STATUS.REJECTED); modalNotice("ok", `Status set to <b>${STATUS.REJECTED}</b>.`); await renderAdminTable(); }
-  catch(e){ modalNotice("bad", escapeHtml(e.message)); }
-};
-}
 
     $("mPending").onclick = () => adminSetStatus(STATUS.PENDING);
     $("mProcessing").onclick = () => adminSetStatus(STATUS.PROCESSING);
