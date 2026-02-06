@@ -1103,57 +1103,80 @@
     };
 
     // ===================== ADMIN DASHBOARD (LOCAL ONLY) =====================
-    function renderAdminTable(){
-      const orders = loadOrders();
-      const tbody = $("adminTableBody");
-      tbody.innerHTML = "";
+    async function adminFetchOrders(){
+  const r = await fetch("/api/admin/orders", {
+    headers: { "x-admin-auth": ADMIN.password } // Canvasphere@0625
+  });
+  const data = await r.json().catch(()=>null);
+  if(!r.ok || !data?.ok) throw new Error(data?.error || "Failed to fetch orders");
+  return data.orders || [];
+}
 
-      const pendingCount = orders.filter(o => (o.status || STATUS.PENDING) === STATUS.PENDING).length;
-      const processingCount = orders.filter(o => (o.status || STATUS.PENDING) === STATUS.PROCESSING).length;
+    async function renderAdminTable(){
+  const tbody = $("adminTableBody");
+  tbody.innerHTML = `<tr><td colspan="9" class="muted" style="padding:14px">Loading…</td></tr>`;
 
-      $("adminCount").textContent = orders.length;
-      $("adminPending").textContent = pendingCount;
-      $("adminProcessing").textContent = processingCount;
+  let orders = [];
+  try{
+    orders = await adminFetchOrders();
+  }catch(e){
+    tbody.innerHTML = `<tr><td colspan="9" class="muted" style="padding:14px">Admin load failed: ${escapeHtml(e.message)}</td></tr>`;
+    $("adminCount").textContent = "0";
+    $("adminPending").textContent = "0";
+    $("adminProcessing").textContent = "0";
+    return;
+  }
 
-      if(orders.length === 0){
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td colspan="9" class="muted" style="padding:14px">No submissions yet.</td>`;
-        tbody.appendChild(tr);
-        return;
-      }
+  tbody.innerHTML = "";
 
-      for(const o of orders){
-        const status = o.status || STATUS.PENDING;
-        const tagClass = statusTagClass(status);
-        const receiptType = (o.payment?.receiptFile?.type || "").toLowerCase();
-        const receiptLabel = receiptType.includes("pdf") ? "PDF" : "Image";
+  const getStatus = (o) => o.status || STATUS.PENDING;
 
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td class="muted">${escapeHtml(fmtDate(o.createdAtISO))}</td>
-          <td class="mono">${escapeHtml(o.orderId)}</td>
-          <td>${escapeHtml(o.customer?.name || "")}</td>
-          <td class="muted">${escapeHtml(o.customer?.email || "")}</td>
-          <td>${o.item?.quantity ?? ""}</td>
-          <td>₱${o.item?.total ?? ""}</td>
-          <td><span class="tag ${tagClass}">${escapeHtml(status)}</span></td>
-          <td><span class="tag">${receiptLabel}</span></td>
-          <td><button class="btn" data-view="${escapeHtml(o.orderId)}" type="button">View</button></td>
-        `;
-        tbody.appendChild(tr);
-      }
+  const pendingCount = orders.filter(o => getStatus(o) === STATUS.PENDING).length;
+  const processingCount = orders.filter(o => getStatus(o) === STATUS.PROCESSING).length;
 
-      tbody.querySelectorAll("[data-view]").forEach(btn => {
-        btn.addEventListener("click", () => openModal(btn.getAttribute("data-view")));
-      });
-    }
+  $("adminCount").textContent = String(orders.length);
+  $("adminPending").textContent = String(pendingCount);
+  $("adminProcessing").textContent = String(processingCount);
 
-    $("adminExport").onclick = () => downloadJSON("cando_orders_export.json", loadOrders());
-    $("adminClearAll").onclick = () => {
-      if(!confirm("Delete ALL submissions from this browser's localStorage?")) return;
-      saveOrders([]);
-      renderAdminTable();
-    };
+  if(orders.length === 0){
+    tbody.innerHTML = `<tr><td colspan="9" class="muted" style="padding:14px">No submissions yet.</td></tr>`;
+    return;
+  }
+
+  for(const o of orders){
+    const status = getStatus(o);
+    const tagClass = statusTagClass(status);
+
+    // Adjust these to your actual columns (based on your DB)
+    const createdISO = o.created_at || o.createdAtISO || o.created_at_iso || new Date().toISOString();
+    const orderId = o.order_id || o.orderId || "—";
+    const name = o.name || o.customer_name || "";
+    const email = o.email || "";
+    const qtyVal = o.qty ?? o.quantity ?? "";
+    const totalVal = o.total ?? "";
+    const receiptPath = o.receipt_path || "";
+    const receiptLabel = receiptPath?.toLowerCase().includes(".pdf") ? "PDF" : "Image";
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="muted">${escapeHtml(fmtDate(createdISO))}</td>
+      <td class="mono">${escapeHtml(orderId)}</td>
+      <td>${escapeHtml(name)}</td>
+      <td class="muted">${escapeHtml(email)}</td>
+      <td>${escapeHtml(qtyVal)}</td>
+      <td>₱${escapeHtml(totalVal)}</td>
+      <td><span class="tag ${tagClass}">${escapeHtml(status)}</span></td>
+      <td><span class="tag">${escapeHtml(receiptLabel)}</span></td>
+      <td><button class="btn" data-view="${escapeHtml(orderId)}" type="button">View</button></td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  tbody.querySelectorAll("[data-view]").forEach(btn => {
+    btn.addEventListener("click", () => openModal(btn.getAttribute("data-view")));
+  });
+}
+
 
     // ===================== MODAL (LOCAL ONLY) =====================
     const modalBack = $("modalBack");
