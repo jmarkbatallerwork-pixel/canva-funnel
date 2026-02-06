@@ -1,15 +1,7 @@
-// /api/submit.js  (CommonJS for Vercel Node Functions)
-const fs = require("fs");
-const formidablePkg = require("formidable");
-
-// Support both formidable v2 and v3 exports
-const formidable =
-  typeof formidablePkg === "function"
-    ? formidablePkg
-    : formidablePkg.formidable || formidablePkg.default;
+// /api/submit.js (Safe CommonJS for Vercel — avoids top-level crashes)
 
 module.exports.config = {
-  api: { bodyParser: false }, // IMPORTANT for multipart/form-data
+  api: { bodyParser: false }, // REQUIRED for multipart/form-data
 };
 
 function json(res, status, data) {
@@ -33,13 +25,34 @@ module.exports = async function handler(req, res) {
     return json(res, 405, { ok: false, error: "Method not allowed" });
   }
 
+  // ✅ Safe requires INSIDE handler so missing modules won't crash invocation
+  let fs;
+  let formidablePkg;
+  try {
+    fs = require("fs");
+    formidablePkg = require("formidable");
+  } catch (e) {
+    console.error("MODULE LOAD ERROR:", e);
+    return json(res, 500, {
+      ok: false,
+      error:
+        "Server missing dependency. Run: npm i formidable, commit package.json/package-lock.json, then redeploy. " +
+        String(e?.message || e),
+    });
+  }
+
+  const formidable =
+    typeof formidablePkg === "function"
+      ? formidablePkg
+      : formidablePkg.formidable || formidablePkg.default;
+
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!SUPABASE_URL || !SERVICE_KEY) {
     return json(res, 500, {
       ok: false,
-      error: "Missing env vars: SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY",
+      error: "Missing env vars: SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY (set in Vercel Project Settings → Environment Variables)",
     });
   }
 
@@ -63,6 +76,7 @@ module.exports = async function handler(req, res) {
     const qty = Number(fields.qty || 0);
     const total = Number(fields.total || 0);
 
+    // ✅ Fix: formidable sometimes returns files as array
     const receiptRaw = files.receipt;
     const receipt = Array.isArray(receiptRaw) ? receiptRaw[0] : receiptRaw;
 
@@ -75,7 +89,7 @@ module.exports = async function handler(req, res) {
 
     const filePath = receipt.filepath || receipt.path;
     if (!filePath) {
-      return json(res, 500, { ok: false, error: "Receipt file path missing (formidable issue)" });
+      return json(res, 500, { ok: false, error: "Receipt file path missing (formidable parsing issue)" });
     }
 
     const fileBuffer = fs.readFileSync(filePath);
@@ -86,6 +100,7 @@ module.exports = async function handler(req, res) {
     const originalName = receipt.originalFilename || receipt.name || "receipt";
     const extGuess = originalName.includes(".") ? originalName.split(".").pop() : "";
     const ext = String(extGuess || "").toLowerCase();
+
     const storagePath = `${order_id}/receipt.${ext || "bin"}`;
     const contentType = receipt.mimetype || receipt.type || "application/octet-stream";
 
