@@ -1157,18 +1157,37 @@ async function openModal(orderId){
     };
 
     // For now: status buttons show message only (needs API endpoint to update status)
-    $("mPending").onclick = () => modalNotice("bad", "Status update not wired yet (needs /api/admin/status).");
-    $("mProcessing").onclick = () => modalNotice("bad", "Status update not wired yet (needs /api/admin/status).");
-    $("mVerifiedSent").onclick = () => modalNotice("bad", "Status update not wired yet (needs /api/admin/status).");
-    $("mReject").onclick = () => modalNotice("bad", "Status update not wired yet (needs /api/admin/status).");
+async function adminSetStatus(orderId, newStatus){
+  const r = await fetch("/api/admin/status", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-admin-auth": ADMIN.password
+    },
+    body: JSON.stringify({ order_id: orderId, status: newStatus })
+  });
+  const j = await r.json().catch(() => ({}));
+  if(!r.ok || !j.ok) throw new Error(j.details || j.error || "Status update failed");
+  return j;
+}
 
-    // Delete (needs API endpoint)
-    $("mDelete").onclick = () => modalNotice("bad", "Delete not wired yet (needs /api/admin/delete).");
-
-  }catch(err){
-    modalNotice("bad", escapeHtml(err.message || "Not found"));
-    $("mPreview").textContent = "No preview.";
-  }
+// in openModal(), after you loaded the order:
+$("mPending").onclick = async () => {
+  try { await adminSetStatus(orderId, STATUS.PENDING); modalNotice("ok", `Status set to <b>${STATUS.PENDING}</b>.`); await renderAdminTable(); }
+  catch(e){ modalNotice("bad", escapeHtml(e.message)); }
+};
+$("mProcessing").onclick = async () => {
+  try { await adminSetStatus(orderId, STATUS.PROCESSING); modalNotice("ok", `Status set to <b>${STATUS.PROCESSING}</b>.`); await renderAdminTable(); }
+  catch(e){ modalNotice("bad", escapeHtml(e.message)); }
+};
+$("mVerifiedSent").onclick = async () => {
+  try { await adminSetStatus(orderId, STATUS.VERIFIED_SENT); modalNotice("ok", `Status set to <b>${STATUS.VERIFIED_SENT}</b>.`); await renderAdminTable(); }
+  catch(e){ modalNotice("bad", escapeHtml(e.message)); }
+};
+$("mReject").onclick = async () => {
+  try { await adminSetStatus(orderId, STATUS.REJECTED); modalNotice("ok", `Status set to <b>${STATUS.REJECTED}</b>.`); await renderAdminTable(); }
+  catch(e){ modalNotice("bad", escapeHtml(e.message)); }
+};
 }
 
     $("mPending").onclick = () => adminSetStatus(STATUS.PENDING);
