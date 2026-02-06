@@ -1,8 +1,14 @@
-// /api/submit.js
-import formidable from "formidable";
-import fs from "fs";
+// /api/submit.js  (CommonJS for Vercel Node Functions)
+const fs = require("fs");
+const formidablePkg = require("formidable");
 
-export const config = {
+// Support both formidable v2 and v3 exports
+const formidable =
+  typeof formidablePkg === "function"
+    ? formidablePkg
+    : formidablePkg.formidable || formidablePkg.default;
+
+module.exports.config = {
   api: { bodyParser: false }, // IMPORTANT for multipart/form-data
 };
 
@@ -22,7 +28,7 @@ function makeId() {
   );
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
     return json(res, 405, { ok: false, error: "Method not allowed" });
   }
@@ -31,14 +37,16 @@ export default async function handler(req, res) {
   const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!SUPABASE_URL || !SERVICE_KEY) {
-    return json(res, 500, { ok: false, error: "Missing Supabase env vars (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY)" });
+    return json(res, 500, {
+      ok: false,
+      error: "Missing env vars: SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY",
+    });
   }
 
-  // Note: formidable may return files as arrays depending on version/settings.
   const form = formidable({
     multiples: false,
     keepExtensions: true,
-    maxFileSize: 4 * 1024 * 1024, // 4MB (match your frontend limit)
+    maxFileSize: 4 * 1024 * 1024, // 4MB
   });
 
   try {
@@ -55,7 +63,6 @@ export default async function handler(req, res) {
     const qty = Number(fields.qty || 0);
     const total = Number(fields.total || 0);
 
-    // --- IMPORTANT FIX: receipt can be array in some formidable versions ---
     const receiptRaw = files.receipt;
     const receipt = Array.isArray(receiptRaw) ? receiptRaw[0] : receiptRaw;
 
@@ -63,24 +70,22 @@ export default async function handler(req, res) {
       return json(res, 400, { ok: false, error: "Missing fields (name/email/ref/qty/total)" });
     }
     if (!receipt) {
-      return json(res, 400, { ok: false, error: "Receipt file missing (field name must be 'receipt')" });
+      return json(res, 400, { ok: false, error: "Receipt file missing (field must be 'receipt')" });
     }
 
-    const filePath = receipt.filepath || receipt.path; // formidable v2/v3 compatibility
+    const filePath = receipt.filepath || receipt.path;
     if (!filePath) {
-      return json(res, 500, { ok: false, error: "Receipt file path missing (formidable parsing issue)" });
+      return json(res, 500, { ok: false, error: "Receipt file path missing (formidable issue)" });
     }
 
     const fileBuffer = fs.readFileSync(filePath);
 
     const order_id = makeId();
 
-    // ---- 1) Upload to Supabase Storage bucket: "receipts"
-    // Make sure bucket exists: Storage -> New bucket -> name: receipts
+    // ---- Upload to Supabase Storage bucket: "receipts"
     const originalName = receipt.originalFilename || receipt.name || "receipt";
     const extGuess = originalName.includes(".") ? originalName.split(".").pop() : "";
     const ext = String(extGuess || "").toLowerCase();
-
     const storagePath = `${order_id}/receipt.${ext || "bin"}`;
     const contentType = receipt.mimetype || receipt.type || "application/octet-stream";
 
@@ -102,9 +107,7 @@ export default async function handler(req, res) {
       return json(res, 500, { ok: false, error: "Storage upload failed: " + t });
     }
 
-    // ---- 2) Insert into Supabase table: "orders"
-    // Ensure these columns exist (or change names to match your table):
-    // order_id (text), name (text), email (text), reference_no (text), qty (int), total (int), status (text), receipt_path (text)
+    // ---- Insert into Supabase table: "orders"
     const insert = {
       order_id,
       name,
@@ -137,4 +140,4 @@ export default async function handler(req, res) {
     console.error("SUBMIT ERROR:", err);
     return json(res, 500, { ok: false, error: String(err?.message || err) });
   }
-}
+};
