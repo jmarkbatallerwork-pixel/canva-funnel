@@ -123,16 +123,17 @@ module.exports = async function handler(req, res) {
     }
 
     // ---- Insert into Supabase table: "orders"
-    const insert = {
-      order_id,
-      name,
-      email,
-      reference_no: ref,
-      qty,
-      total,
-      status: "Pending",
-      receipt_path: storagePath,
-    };
+const insert = {
+  order_id,
+  name,
+  email,
+  qty,
+  total,
+  gcash_ref: ref,          // ✅ REQUIRED by your table (NOT NULL)
+  receipt_path: storagePath,
+  status: "Pending",
+};
+
 
     const dbResp = await fetch(`${SUPABASE_URL}/rest/v1/orders`, {
       method: "POST",
