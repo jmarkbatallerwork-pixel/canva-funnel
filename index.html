@@ -174,7 +174,6 @@
       border-color: rgba(255,79,163,.45);
       box-shadow: 0 0 0 4px rgba(255,79,163,.12);
     }
-    .input[readonly]{background:#fff9fd; color:#6b7280}
 
     .stepper{display:flex; align-items:center; gap:10px}
     .stepper .mini{
@@ -191,7 +190,6 @@
     .stepper .mini:hover{border-color:#f0b9d3}
     .stepper .qty{max-width:120px; text-align:center; font-weight:1100}
 
-    /* File upload */
     input[type="file"]{display:none}
     .fileRow{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
     .fileBtn{
@@ -234,7 +232,6 @@
     .page{display:none}
     .page.active{display:block}
 
-    /* Admin */
     table{width:100%; border-collapse:separate; border-spacing:0}
     th, td{padding:10px 10px; text-align:left; font-size:13px; border-bottom:1px solid var(--line)}
     th{color:#8a3b5a; font-size:12px; letter-spacing:.2px}
@@ -254,7 +251,6 @@
     .tag.processing{border-color: rgba(59,130,246,.25); background: rgba(59,130,246,.08); color:#1d4ed8}
     .tag.reject{border-color: rgba(239,68,68,.25); background: rgba(239,68,68,.08); color:#7a1b1b}
 
-    /* Modal */
     .modalBack{
       position:fixed; inset:0; background: rgba(15,23,42,.35);
       display:none; align-items:center; justify-content:center;
@@ -438,7 +434,6 @@
             </div>
 
             <div class="line"></div>
-
             <div class="notice">
               <b>Next step:</b> Pay via GCash and upload receipt + reference.
             </div>
@@ -588,7 +583,7 @@
         <div class="row" style="justify-content:space-between">
           <div>
             <h2 class="sectionTitle">Admin Login</h2>
-            <p class="muted">Local-only demo auth (later: Supabase + Vercel).</p>
+            <p class="muted">Supabase-powered admin.</p>
           </div>
           <button class="btn" id="adminBackHome" type="button">← Back</button>
         </div>
@@ -624,7 +619,8 @@
               • View receipt file (image/pdf)<br>
               • Check GCash reference<br>
               • Mark status: Pending / Processing / Verified (Sent) / Rejected<br>
-              • Export all orders (JSON)
+              • Export all orders (JSON)<br>
+              • Clear all (DB)
             </div>
           </div>
         </div>
@@ -637,7 +633,7 @@
         <div class="row" style="justify-content:space-between">
           <div>
             <h2 class="sectionTitle">Admin Dashboard</h2>
-            <p class="muted">Payment verification (localStorage).</p>
+            <p class="muted">Payment verification (Supabase).</p>
           </div>
           <div class="row">
             <button class="btn" id="adminLogout" type="button">Logout</button>
@@ -710,7 +706,7 @@
             <div class="muted"><b>Reference:</b> <span class="mono" id="mRef">—</span></div>
             <div class="muted"><b>Qty:</b> <span id="mQty">—</span></div>
             <div class="muted"><b>Total:</b> ₱<span id="mTotal">—</span></div>
-            <div class="muted"><b>File:</b> <span id="mFile">—</span></div>
+            <div class="muted"><b>Receipt:</b> <span id="mFile">—</span></div>
 
             <div class="line"></div>
 
@@ -740,21 +736,13 @@
   </div>
 
   <script>
-    // ===================== CONFIG =====================
     const PRODUCT = { name: "Cando Pro - Lifetime Subscription", unitPrice: 39 };
-
-    // EDIT THESE:
     const GCash = { name: "YOUR NAME", number: "09XX-XXX-XXXX" };
-
-    // Admin credentials (requested)
     const ADMIN = { username: "Canvasphere@0625", password: "Canvasphere@0625" };
 
-    // Storage keys
-    const KEY_ORDERS = "cando_orders";
     const KEY_LAST = "cando_last_submission";
     const KEY_ADMIN_AUTH = "cando_admin_authed";
 
-    // Status values (customer-facing)
     const STATUS = {
       PENDING: "Pending",
       PROCESSING: "Processing",
@@ -762,14 +750,12 @@
       REJECTED: "Rejected"
     };
 
-    // ===================== STATE =====================
     let qty = 1;
     let cartQty = 0;
-    let lastSubmission = null; // now stores {orderId}
     let modalOrderId = null;
+    let modalReceiptUrl = null;
     let prevPageBeforeTracker = "page-landing";
 
-    // ===================== HELPERS =====================
     const $ = (id) => document.getElementById(id);
     const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
     const intOnly = (v, fallback) => {
@@ -782,10 +768,7 @@
     function setCartBadge(){ $("cartBadge").textContent = String(cartQty); }
 
     function showPage(which){
-      const pages = [
-        "page-landing","page-order","page-checkout","page-tracker",
-        "page-admin-login","page-admin-dashboard"
-      ];
+      const pages = ["page-landing","page-order","page-checkout","page-tracker","page-admin-login","page-admin-dashboard"];
       pages.forEach(p => $(p).classList.remove("active"));
       $(which).classList.add("active");
       window.scrollTo({top:0, behavior:"smooth"});
@@ -800,14 +783,11 @@
 
     function render(){
       setCartBadge();
-
-      // order form
       $("qty").value = qty;
       $("subtotal").textContent = total(qty);
       $("cartQtyText").textContent = cartQty;
       $("cartTotalText").textContent = total(cartQty);
 
-      // checkout
       $("checkoutQtyText").textContent = cartQty;
       $("payTotal").textContent = total(cartQty);
       $("gcashName").textContent = GCash.name;
@@ -828,71 +808,15 @@
       box.innerHTML = html;
     }
 
-    function downloadJSON(filename, obj){
-      const blob = new Blob([JSON.stringify(obj, null, 2)], {type:"application/json"});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url; a.download = filename;
-      document.body.appendChild(a); a.click(); a.remove();
-      URL.revokeObjectURL(url);
-    }
-
-    function makeId(){
-      return "CANDO-" + Date.now().toString(36).toUpperCase() + "-" + Math.random().toString(36).slice(2,7).toUpperCase();
-    }
-
-    function loadOrders(){
-      try{
-        const raw = localStorage.getItem(KEY_ORDERS);
-        const arr = raw ? JSON.parse(raw) : [];
-        return Array.isArray(arr) ? arr : [];
-      }catch{ return []; }
-    }
-    function saveOrders(arr){ localStorage.setItem(KEY_ORDERS, JSON.stringify(arr)); }
-    function upsertOrder(order){
-      const orders = loadOrders();
-      const idx = orders.findIndex(o => o.orderId === order.orderId);
-      if(idx >= 0) orders[idx] = order;
-      else orders.unshift(order);
-      saveOrders(orders);
-    }
-    function findOrder(orderId){ return loadOrders().find(o => o.orderId === orderId) || null; }
-    function deleteOrder(orderId){ saveOrders(loadOrders().filter(o => o.orderId !== orderId)); }
-    function setOrderStatus(orderId, status){
-      const orders = loadOrders();
-      const idx = orders.findIndex(o => o.orderId === orderId);
-      if(idx >= 0){
-        orders[idx].status = status;
-        orders[idx].statusUpdatedAtISO = new Date().toISOString();
-        saveOrders(orders);
-      }
-    }
-
-    function isAdminAuthed(){ return sessionStorage.getItem(KEY_ADMIN_AUTH) === "1"; }
-    function setAdminAuthed(val){
-      if(val) sessionStorage.setItem(KEY_ADMIN_AUTH, "1");
-      else sessionStorage.removeItem(KEY_ADMIN_AUTH);
-    }
-
-    function bytesToKB(n){ return Math.round(n/1024); }
-    function fmtDate(iso){
-      try{ return new Date(iso).toLocaleString(); }catch{ return iso; }
-    }
     function escapeHtml(str){
       return String(str).replace(/[&<>"']/g, s => ({
         "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
       }[s]));
     }
-
-    // left in file for admin local previews (not used by submit anymore)
-    function fileToDataURL(file){
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onerror = () => reject(new Error("File read error"));
-        reader.onload = () => resolve(String(reader.result));
-        reader.readAsDataURL(file);
-      });
+    function fmtDate(iso){
+      try{ return new Date(iso).toLocaleString(); }catch{ return iso; }
     }
+    function bytesToKB(n){ return Math.round(n/1024); }
 
     function statusTagClass(status){
       if(status === STATUS.VERIFIED_SENT) return "ok";
@@ -901,41 +825,35 @@
       return "pending";
     }
 
-    function statusCustomerMessage(status, order){
-      const updated = order?.statusUpdatedAtISO ? `<br><span class="muted">Updated: ${escapeHtml(fmtDate(order.statusUpdatedAtISO))}</span>` : "";
-      if(status === STATUS.PENDING){
-        return `<b>Status: Pending</b><br>We received your submission and will verify your payment soon.${updated}`;
-      }
-      if(status === STATUS.PROCESSING){
-        return `<b>Status: Processing</b><br>Your payment is being checked / your access is being prepared.${updated}`;
-      }
-      if(status === STATUS.VERIFIED_SENT){
-        return `<b>Status: Verified (Already Sent on your email)</b><br>Your access was already sent to <b>${escapeHtml(order?.customer?.email || "your email")}</b>.${updated}`;
-      }
-      if(status === STATUS.REJECTED){
-        return `<b>Status: Rejected</b><br>There was an issue with the receipt/reference. Please contact support.${updated}`;
-      }
+    function isAdminAuthed(){ return sessionStorage.getItem(KEY_ADMIN_AUTH) === "1"; }
+    function setAdminAuthed(val){
+      if(val) sessionStorage.setItem(KEY_ADMIN_AUTH, "1");
+      else sessionStorage.removeItem(KEY_ADMIN_AUTH);
+    }
+
+    function statusCustomerMessage(status, email, updatedISO){
+      const updated = updatedISO ? `<br><span class="muted">Updated: ${escapeHtml(fmtDate(updatedISO))}</span>` : "";
+      if(status === STATUS.PENDING) return `<b>Status: Pending</b><br>We received your submission and will verify your payment soon.${updated}`;
+      if(status === STATUS.PROCESSING) return `<b>Status: Processing</b><br>Your payment is being checked / your access is being prepared.${updated}`;
+      if(status === STATUS.VERIFIED_SENT) return `<b>Status: Verified (Already Sent on your email)</b><br>Your access was already sent to <b>${escapeHtml(email || "your email")}</b>.${updated}`;
+      if(status === STATUS.REJECTED) return `<b>Status: Rejected</b><br>There was an issue with the receipt/reference. Please contact support.${updated}`;
       return `<b>Status: ${escapeHtml(status || "Unknown")}</b>${updated}`;
     }
 
-    // ===================== NAV (FUNNEL) =====================
+    // NAV
     $("ctaToOrder").onclick = () => showPage("page-order");
     $("ctaToOrder2").onclick = () => showPage("page-order");
     $("backToLanding").onclick = () => showPage("page-landing");
     $("toCheckout").onclick = () => showPage("page-checkout");
     $("backToOrder").onclick = () => showPage("page-order");
 
-    // ===================== TRACKER NAV =====================
-    function goTracker(from){
-      prevPageBeforeTracker = from;
-      showPage("page-tracker");
-    }
+    function goTracker(from){ prevPageBeforeTracker = from; showPage("page-tracker"); }
     $("ctaToTrack").onclick = () => goTracker("page-landing");
     $("toTrackFromOrder").onclick = () => goTracker("page-order");
     $("toTrackFromCheckout").onclick = () => goTracker("page-checkout");
     $("backFromTracker").onclick = () => showPage(prevPageBeforeTracker || "page-landing");
 
-    // ===================== ORDER FORM / CART =====================
+    // CART
     $("minus").onclick = () => { qty = clamp(qty - 1, 1, 99); render(); };
     $("plus").onclick  = () => { qty = clamp(qty + 1, 1, 99); render(); };
     $("qty").oninput   = () => { qty = clamp(intOnly($("qty").value, 1), 1, 99); render(); };
@@ -951,7 +869,7 @@
       render();
     };
 
-    // ===================== CHECKOUT (API SUBMIT) =====================
+    // CHECKOUT SUBMIT
     $("receipt").onchange = () => {
       const f = $("receipt").files && $("receipt").files[0];
       $("fileInfo").textContent = f ? `${f.name} (${bytesToKB(f.size)} KB)` : "No file selected";
@@ -970,7 +888,6 @@
       if(!ref) return showNotice("notice", "bad", "Please enter your GCash reference number.");
       if(!file) return showNotice("notice", "bad", "Please upload your receipt.");
 
-      // Optional safety: Vercel upload limits (keep file small)
       const MAX_MB = 4;
       if(file.size > MAX_MB * 1024 * 1024){
         return showNotice("notice", "bad", `Receipt file is too large. Please upload under ${MAX_MB}MB.`);
@@ -990,20 +907,12 @@
       try{
         showNotice("notice", "ok", "Submitting… please wait.");
 
-        const r = await fetch("/api/submit", {
-          method: "POST",
-          body: fd
-        });
-
+        const r = await fetch("/api/submit", { method: "POST", body: fd });
         const j = await r.json().catch(() => ({}));
 
-        if(!r.ok || !j.ok){
-          throw new Error(j.error || "Submit failed. Please try again.");
-        }
+        if(!r.ok || !j.ok) throw new Error(j.error || "Submit failed. Please try again.");
 
-        const saved = { orderId: j.order_id };
-        lastSubmission = saved;
-        localStorage.setItem(KEY_LAST, JSON.stringify(saved));
+        localStorage.setItem(KEY_LAST, JSON.stringify({ orderId: j.order_id }));
         $("download").disabled = false;
 
         showNotice("notice", "ok",
@@ -1012,7 +921,6 @@
           `You can now check it in <b>Track Order</b>.`
         );
 
-        // Optional: clear cart after successful submit
         cartQty = 0;
         render();
 
@@ -1027,19 +935,21 @@
       try{
         const last = JSON.parse(localStorage.getItem(KEY_LAST) || "null");
         if(!last?.orderId) return;
-        downloadJSON(last.orderId + ".json", last);
+        const blob = new Blob([JSON.stringify(last, null, 2)], {type:"application/json"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = last.orderId + ".json";
+        document.body.appendChild(a); a.click(); a.remove();
+        URL.revokeObjectURL(url);
       }catch{}
     };
 
-    // ===================== ORDER TRACKER LOGIC (API) =====================
+    // TRACK
     $("pasteLastOrderBtn").onclick = () => {
       try{
         const last = JSON.parse(localStorage.getItem(KEY_LAST) || "null");
-        if(last?.orderId){
-          $("trackOrderId").value = last.orderId;
-        }else{
-          showNotice("trackNotice", "bad", "No last Order ID found on this browser.");
-        }
+        if(last?.orderId) $("trackOrderId").value = last.orderId;
+        else showNotice("trackNotice", "bad", "No last Order ID found on this browser.");
       }catch{
         showNotice("trackNotice", "bad", "No last Order ID found on this browser.");
       }
@@ -1050,36 +960,24 @@
       if(!id) return showNotice("trackNotice", "bad", "Please enter your Order ID.");
 
       try{
-        const r = await fetch(`/api/track?order_id=${encodeURIComponent(id)}&t=${Date.now()}`, { cache: "no-store" });
+        const r = await fetch(`/api/track?order_id=${encodeURIComponent(id)}&t=${Date.now()}`, { cache:"no-store" });
         const j = await r.json().catch(() => ({}));
+        if(!r.ok || !j.ok) throw new Error(j.error || "Order not found.");
 
-        if(!r.ok || !j.ok){
-          throw new Error(j.error || "Order not found.");
-        }
-
-        const order = j.order || {};
-        const status = order.status || STATUS.PENDING;
-
-        // adapt fields to existing message renderer
-        showNotice("trackNotice", "ok", statusCustomerMessage(status, {
-          statusUpdatedAtISO: order.status_updated_at || order.updated_at || null,
-          customer: { email: order.email || "" }
-        }));
+        const o = j.order || {};
+        showNotice("trackNotice", "ok", statusCustomerMessage(o.status, o.email, o.status_updated_at || o.updated_at));
 
       }catch(err){
         showNotice("trackNotice", "bad", escapeHtml(err.message || "Order not found."));
       }
     };
 
-    // ===================== ADMIN NAV =====================
-    $("openAdmin").onclick = () => {
-      if(isAdminAuthed()) showPage("page-admin-dashboard");
-      else showPage("page-admin-login");
-    };
+    // ADMIN NAV
+    $("openAdmin").onclick = () => isAdminAuthed() ? showPage("page-admin-dashboard") : showPage("page-admin-login");
     $("adminBackHome").onclick = () => showPage("page-landing");
     $("adminBackHome2").onclick = () => showPage("page-landing");
 
-    // ===================== ADMIN LOGIN =====================
+    // ADMIN LOGIN
     $("adminFillPreset").onclick = () => {
       $("adminUser").value = ADMIN.username;
       $("adminPass").value = ADMIN.password;
@@ -1097,150 +995,211 @@
         showNotice("adminLoginNotice", "bad", "Invalid username or password.");
       }
     };
-    $("adminLogout").onclick = () => {
-      setAdminAuthed(false);
-      showPage("page-admin-login");
-    };
+    $("adminLogout").onclick = () => { setAdminAuthed(false); showPage("page-admin-login"); };
 
-    // ===================== ADMIN DASHBOARD (LOCAL ONLY) =====================
+    // ADMIN API
     async function adminFetchOrders(){
-  const r = await fetch("/api/admin/orders", {
-    headers: { "x-admin-auth": ADMIN.password } // Canvasphere@0625
-  });
-  const data = await r.json().catch(()=>null);
-  if(!r.ok || !data?.ok) throw new Error(data?.error || "Failed to fetch orders");
-  return data.orders || [];
-}
+      const r = await fetch("/api/admin/orders", { headers: { "x-admin-auth": ADMIN.password }, cache:"no-store" });
+      const j = await r.json().catch(()=> ({}));
+      if(!r.ok || !j.ok) throw new Error(j.error || "Failed to fetch orders");
+      return j.orders || [];
+    }
 
     async function renderAdminTable(){
-  const tbody = $("adminTableBody");
-  tbody.innerHTML = `<tr><td colspan="9" class="muted" style="padding:14px">Loading…</td></tr>`;
+      const tbody = $("adminTableBody");
+      tbody.innerHTML = `<tr><td colspan="9" class="muted" style="padding:14px">Loading…</td></tr>`;
 
-  let orders = [];
-  try{
-    orders = await adminFetchOrders();
-  }catch(e){
-    tbody.innerHTML = `<tr><td colspan="9" class="muted" style="padding:14px">Admin load failed: ${escapeHtml(e.message)}</td></tr>`;
-    $("adminCount").textContent = "0";
-    $("adminPending").textContent = "0";
-    $("adminProcessing").textContent = "0";
-    return;
-  }
+      let orders = [];
+      try{ orders = await adminFetchOrders(); }
+      catch(e){
+        tbody.innerHTML = `<tr><td colspan="9" class="muted" style="padding:14px">Admin load failed: ${escapeHtml(e.message)}</td></tr>`;
+        $("adminCount").textContent = "0";
+        $("adminPending").textContent = "0";
+        $("adminProcessing").textContent = "0";
+        return;
+      }
 
-  tbody.innerHTML = "";
+      const pendingCount = orders.filter(o => (o.status || STATUS.PENDING) === STATUS.PENDING).length;
+      const processingCount = orders.filter(o => (o.status || STATUS.PENDING) === STATUS.PROCESSING).length;
 
-  const getStatus = (o) => o.status || STATUS.PENDING;
+      $("adminCount").textContent = String(orders.length);
+      $("adminPending").textContent = String(pendingCount);
+      $("adminProcessing").textContent = String(processingCount);
 
-  const pendingCount = orders.filter(o => getStatus(o) === STATUS.PENDING).length;
-  const processingCount = orders.filter(o => getStatus(o) === STATUS.PROCESSING).length;
+      if(orders.length === 0){
+        tbody.innerHTML = `<tr><td colspan="9" class="muted" style="padding:14px">No submissions yet.</td></tr>`;
+        return;
+      }
 
-  $("adminCount").textContent = String(orders.length);
-  $("adminPending").textContent = String(pendingCount);
-  $("adminProcessing").textContent = String(processingCount);
+      tbody.innerHTML = "";
+      for(const o of orders){
+        const status = o.status || STATUS.PENDING;
+        const tagClass = statusTagClass(status);
 
-  if(orders.length === 0){
-    tbody.innerHTML = `<tr><td colspan="9" class="muted" style="padding:14px">No submissions yet.</td></tr>`;
-    return;
-  }
+        const receiptLabel = (o.receipt_path || "").toLowerCase().includes(".pdf") ? "PDF" : "Image";
 
-  for(const o of orders){
-    const status = getStatus(o);
-    const tagClass = statusTagClass(status);
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="muted">${escapeHtml(fmtDate(o.created_at || ""))}</td>
+          <td class="mono">${escapeHtml(o.order_id || "")}</td>
+          <td>${escapeHtml(o.name || "")}</td>
+          <td class="muted">${escapeHtml(o.email || "")}</td>
+          <td>${escapeHtml(o.qty ?? "")}</td>
+          <td>₱${escapeHtml(o.total ?? "")}</td>
+          <td><span class="tag ${tagClass}">${escapeHtml(status)}</span></td>
+          <td><span class="tag">${escapeHtml(receiptLabel)}</span></td>
+          <td><button class="btn" data-view="${escapeHtml(o.order_id)}" type="button">View</button></td>
+        `;
+        tbody.appendChild(tr);
+      }
 
-    // Adjust these to your actual columns (based on your DB)
-    const createdISO = o.created_at || o.createdAtISO || o.created_at_iso || new Date().toISOString();
-    const orderId = o.order_id || o.orderId || "—";
-    const name = o.name || o.customer_name || "";
-    const email = o.email || "";
-    const qtyVal = o.qty ?? o.quantity ?? "";
-    const totalVal = o.total ?? "";
-    const receiptPath = o.receipt_path || "";
-    const receiptLabel = receiptPath?.toLowerCase().includes(".pdf") ? "PDF" : "Image";
+      tbody.querySelectorAll("[data-view]").forEach(btn => {
+        btn.addEventListener("click", () => openModal(btn.getAttribute("data-view")));
+      });
+    }
 
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td class="muted">${escapeHtml(fmtDate(createdISO))}</td>
-      <td class="mono">${escapeHtml(orderId)}</td>
-      <td>${escapeHtml(name)}</td>
-      <td class="muted">${escapeHtml(email)}</td>
-      <td>${escapeHtml(qtyVal)}</td>
-      <td>₱${escapeHtml(totalVal)}</td>
-      <td><span class="tag ${tagClass}">${escapeHtml(status)}</span></td>
-      <td><span class="tag">${escapeHtml(receiptLabel)}</span></td>
-      <td><button class="btn" data-view="${escapeHtml(orderId)}" type="button">View</button></td>
-    `;
-    tbody.appendChild(tr);
-  }
+    $("adminExport").onclick = async () => {
+      try{
+        const orders = await adminFetchOrders();
+        const blob = new Blob([JSON.stringify(orders, null, 2)], {type:"application/json"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = "cando_orders_export.json";
+        document.body.appendChild(a); a.click(); a.remove();
+        URL.revokeObjectURL(url);
+      }catch(e){
+        alert("Export failed: " + (e.message || e));
+      }
+    };
 
-  tbody.querySelectorAll("[data-view]").forEach(btn => {
-    btn.addEventListener("click", () => openModal(btn.getAttribute("data-view")));
-  });
-}
+    $("adminClearAll").onclick = async () => {
+      if(!confirm("Delete ALL orders in Supabase? This cannot be undone.")) return;
+      try{
+        const r = await fetch("/api/admin/clear", {
+          method:"POST",
+          headers: { "x-admin-auth": ADMIN.password }
+        });
+        const j = await r.json().catch(()=>({}));
+        if(!r.ok || !j.ok) throw new Error(j.error || "Clear failed");
+        await renderAdminTable();
+        alert("Cleared.");
+      }catch(e){
+        alert("Clear failed: " + (e.message || e));
+      }
+    };
 
-
-    // ===================== MODAL (LOCAL ONLY) =====================
+    // MODAL
     const modalBack = $("modalBack");
     $("modalClose").onclick = closeModal;
     modalBack.addEventListener("click", (e) => { if(e.target === modalBack) closeModal(); });
 
-    function openModal(orderId){
+    async function openModal(orderId){
       modalOrderId = orderId;
-      const o = findOrder(orderId);
-      if(!o) return alert("Not found");
-
-      $("modalSub").textContent = fmtDate(o.createdAtISO);
-      $("mOrderId").textContent = o.orderId;
-      $("mName").textContent = o.customer?.name || "—";
-      $("mEmail").textContent = o.customer?.email || "—";
-      $("mRef").textContent = o.payment?.referenceNumber || "—";
-      $("mQty").textContent = o.item?.quantity ?? "—";
-      $("mTotal").textContent = o.item?.total ?? "—";
-      $("mFile").textContent = o.payment?.receiptFile ? `${o.payment.receiptFile.name} (${Math.round(o.payment.receiptFile.sizeBytes/1024)} KB)` : "—";
-
-      const preview = $("mPreview");
-      preview.innerHTML = "";
-      const dataURL = o.payment?.receiptDataURL || "";
-      const type = (o.payment?.receiptFile?.type || "").toLowerCase();
-
-      if(!dataURL){
-        preview.textContent = "No receipt stored.";
-      }else if(type.includes("pdf")){
-        const iframe = document.createElement("iframe");
-        iframe.src = dataURL;
-        preview.appendChild(iframe);
-      }else{
-        const img = document.createElement("img");
-        img.src = dataURL;
-        img.alt = "Receipt";
-        preview.appendChild(img);
-      }
-
-      $("mPending").onclick = () => { setOrderStatus(modalOrderId, STATUS.PENDING); modalNotice("ok", `Status set to <b>${STATUS.PENDING}</b>.`); renderAdminTable(); };
-      $("mProcessing").onclick = () => { setOrderStatus(modalOrderId, STATUS.PROCESSING); modalNotice("ok", `Status set to <b>${STATUS.PROCESSING}</b>.`); renderAdminTable(); };
-      $("mVerifiedSent").onclick = () => { setOrderStatus(modalOrderId, STATUS.VERIFIED_SENT); modalNotice("ok", `Status set to <b>${STATUS.VERIFIED_SENT}</b>.`); renderAdminTable(); };
-      $("mReject").onclick = () => { setOrderStatus(modalOrderId, STATUS.REJECTED); modalNotice("ok", `Status set to <b>${STATUS.REJECTED}</b>.`); renderAdminTable(); };
-
-      $("mOpenNewTab").onclick = () => {
-        const o2 = findOrder(modalOrderId);
-        const url = o2?.payment?.receiptDataURL;
-        if(!url) return modalNotice("bad","No receipt to open.");
-        window.open(url, "_blank");
-      };
-
-      $("mDelete").onclick = () => {
-        if(!confirm("Delete this submission?")) return;
-        deleteOrder(modalOrderId);
-        modalNotice("ok","Deleted.");
-        setTimeout(() => { closeModal(); renderAdminTable(); }, 250);
-      };
+      modalReceiptUrl = null;
 
       $("mNotice").style.display = "none";
-      modalBack.classList.add("open");
+      $("mPreview").textContent = "Loading…";
+
+      try{
+        const r = await fetch(`/api/admin/order?order_id=${encodeURIComponent(orderId)}&t=${Date.now()}`, {
+          headers: { "x-admin-auth": ADMIN.password },
+          cache:"no-store"
+        });
+        const j = await r.json().catch(()=>({}));
+        if(!r.ok || !j.ok) throw new Error(j.error || "Not found");
+
+        const o = j.order;
+        $("modalSub").textContent = fmtDate(o.created_at || "");
+        $("mOrderId").textContent = o.order_id || "—";
+        $("mName").textContent = o.name || "—";
+        $("mEmail").textContent = o.email || "—";
+        $("mRef").textContent = o.gcash_ref || "—";
+        $("mQty").textContent = o.qty ?? "—";
+        $("mTotal").textContent = o.total ?? "—";
+        $("mFile").textContent = o.receipt_path || "—";
+
+        modalReceiptUrl = o.receipt_url || null;
+
+        // preview
+        const prev = $("mPreview");
+        prev.innerHTML = "";
+        if(!modalReceiptUrl){
+          prev.textContent = "No receipt URL.";
+        }else if((o.receipt_path || "").toLowerCase().includes(".pdf")){
+          const iframe = document.createElement("iframe");
+          iframe.src = modalReceiptUrl;
+          prev.appendChild(iframe);
+        }else{
+          const img = document.createElement("img");
+          img.src = modalReceiptUrl;
+          img.alt = "Receipt";
+          prev.appendChild(img);
+        }
+
+        modalBack.classList.add("open");
+
+      }catch(e){
+        alert("Not found");
+        closeModal();
+      }
     }
+
+    async function adminSetStatus(status){
+      if(!modalOrderId) return;
+      try{
+        const r = await fetch("/api/admin/status", {
+          method:"POST",
+          headers: {
+            "Content-Type":"application/json",
+            "x-admin-auth": ADMIN.password
+          },
+          body: JSON.stringify({ order_id: modalOrderId, status })
+        });
+        const j = await r.json().catch(()=>({}));
+        if(!r.ok || !j.ok) throw new Error(j.error || "Update failed");
+        modalNotice("ok", `Status updated to <b>${escapeHtml(status)}</b>.`);
+        await renderAdminTable();
+      }catch(e){
+        modalNotice("bad", escapeHtml(e.message || "Update failed"));
+      }
+    }
+
+    $("mPending").onclick = () => adminSetStatus(STATUS.PENDING);
+    $("mProcessing").onclick = () => adminSetStatus(STATUS.PROCESSING);
+    $("mVerifiedSent").onclick = () => adminSetStatus(STATUS.VERIFIED_SENT);
+    $("mReject").onclick = () => adminSetStatus(STATUS.REJECTED);
+
+    $("mOpenNewTab").onclick = () => {
+      if(!modalReceiptUrl) return modalNotice("bad","No receipt URL.");
+      window.open(modalReceiptUrl, "_blank");
+    };
+
+    $("mDelete").onclick = async () => {
+      if(!modalOrderId) return;
+      if(!confirm("Delete this order?")) return;
+      try{
+        const r = await fetch("/api/admin/delete", {
+          method:"POST",
+          headers: {
+            "Content-Type":"application/json",
+            "x-admin-auth": ADMIN.password
+          },
+          body: JSON.stringify({ order_id: modalOrderId })
+        });
+        const j = await r.json().catch(()=>({}));
+        if(!r.ok || !j.ok) throw new Error(j.error || "Delete failed");
+        modalNotice("ok","Deleted.");
+        await renderAdminTable();
+        setTimeout(closeModal, 250);
+      }catch(e){
+        modalNotice("bad", escapeHtml(e.message || "Delete failed"));
+      }
+    };
 
     function closeModal(){
       modalBack.classList.remove("open");
       modalOrderId = null;
+      modalReceiptUrl = null;
     }
 
     function modalNotice(type, html){
@@ -1251,7 +1210,7 @@
       box.innerHTML = html;
     }
 
-    // ===================== INIT =====================
+    // INIT
     setFunnelLabel("Landing");
     setCartBadge();
     render();
